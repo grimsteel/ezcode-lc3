@@ -1,0 +1,15 @@
+secret = 42
+print("Guess a number between 1 and 100.")
+guess = input()
+n = 1
+while (guess != secret) {
+    if (guess < secret) {
+        print("Too low.")
+    }
+    else {
+        print("Too high.")
+    }
+    guess = input()
+    n = n + 1
+}
+print("Correct! You got it in " + n + " guesses.")
