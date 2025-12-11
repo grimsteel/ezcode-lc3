@@ -37,4 +37,19 @@ public class Morpheme {
   public static Morpheme sequence(String name, String[] sequence) {
     return new Morpheme(name, Arrays.asList(sequence), MorphemeType.Sequence);
   }
+  
+  public ParsedMorpheme toParsed(Object parsedValue) {
+    return new ParsedMorpheme(name, parsedValue, type);
+  }
+}
+
+class ParsedMorpheme {
+  public Object value;
+  public MorphemeType type;
+  public String name;
+  public ParsedMorpheme(String name, Object value, MorphemeType type) {
+    this.value = value;
+    this.type = type;
+    this.name = name;
+  }
 }

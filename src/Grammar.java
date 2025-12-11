@@ -1,10 +1,5 @@
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Scanner;
-import java.io.File;
-import java.io.FileNotFoundException;
-
 
 /** Represents a lexicon as specified by a lexicon file. The file should 
  *  consist of 1 terminal symbol per row with each row being made up of 3 
