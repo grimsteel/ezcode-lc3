@@ -15,11 +15,11 @@
     4      1  PRINT            null
     4      6  LPAREN           null
     4      7  IDENTIFIER       a
-    4      9  PLUS             null
-    4     11  IDENTIFIER       b
-    4     13  PLUS             null
-    4     15  IDENTIFIER       c
-    4     16  RPAREN           null
-    4     17  SEMICOLON        null
+    4      8  COMMA            null
+    4     10  IDENTIFIER       b
+    4     11  COMMA            null
+    4     13  IDENTIFIER       c
+    4     14  RPAREN           null
+    4     15  SEMICOLON        null
     4      0  EOF              null
 
