@@ -35,16 +35,19 @@ public class Parser {
     this.tokens = tokens;
   }
   
-  ArrayList<Statement> parseSequence() {
+  ArrayList<Statement> parseSequence(boolean root) {
     ArrayList<Statement> stmts = new ArrayList<>();
     while (true) {
-      if (expect("EOF")) {
+      if (root && expect("EOF")) {
         break;
       }
       
       Statement stmt = parseStatement();
       if (stmt == null) {
-        System.out.printf("Unexpected %s\n", peek());
+        if (root) {
+          // only print an error if this is the root
+          System.out.printf("Unexpected %s\n", peek());
+        }
         break;
       }
       stmts.add(stmt);
@@ -155,7 +158,7 @@ public class Parser {
   Block parseBlock() {
     int currentPos = pos;
     if (expect("LCURLY")) {
-      ArrayList<Statement> stmts = parseSequence();
+      ArrayList<Statement> stmts = parseSequence(false);
       if (stmts != null && expect("RCURLY")) {
         return new Block(stmts);
       }
@@ -171,6 +174,7 @@ public class Parser {
       return null;
     }
     ArrayList<Expression> exprs = new ArrayList<>();
+    exprs.add(first);
     while (true) {
       int initialPos = pos;
       if (expect("COMMA")) {
@@ -186,7 +190,7 @@ public class Parser {
         break;
       }
     }
-    return null;
+    return exprs;
   }
   
   Expression parseExpression() {

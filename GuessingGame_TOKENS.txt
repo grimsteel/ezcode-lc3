@@ -3,23 +3,26 @@
     1      1  IDENTIFIER       secret
     1      8  ASSIGN           null
     1     10  INTEGER          42
+    1     12  SEMICOLON        null
     2      1  PRINT            null
     2      6  LPAREN           null
-    2      7  STRING           .
+    2      7  STRING           Guess a number between 1 and 100.
     2     42  RPAREN           null
+    2     43  SEMICOLON        null
     3      1  IDENTIFIER       guess
     3      7  ASSIGN           null
     3      9  INPUT            null
     3     14  LPAREN           null
     3     15  RPAREN           null
+    3     16  SEMICOLON        null
     4      1  IDENTIFIER       n
     4      3  ASSIGN           null
     4      5  INTEGER          1
+    4      6  SEMICOLON        null
     5      1  WHILE            null
     5      7  LPAREN           null
     5      8  IDENTIFIER       guess
-    5     14  NOT              null
-    5     15  ASSIGN           null
+    5     14  NOTEQUAL         null
     5     17  IDENTIFIER       secret
     5     23  RPAREN           null
     5     25  LCURLY           null
@@ -32,30 +35,35 @@
     6     25  LCURLY           null
     7      9  PRINT            null
     7     14  LPAREN           null
-    7     15  STRING           .
+    7     15  STRING           Too low.
     7     25  RPAREN           null
+    7     26  SEMICOLON        null
     8      5  RCURLY           null
     9      5  ELSE             null
     9     10  LCURLY           null
    10      9  PRINT            null
    10     14  LPAREN           null
-   10     15  STRING           .
+   10     15  STRING           Too high.
    10     26  RPAREN           null
+   10     27  SEMICOLON        null
    11      5  RCURLY           null
    12      5  IDENTIFIER       guess
    12     11  ASSIGN           null
    12     13  INPUT            null
    12     18  LPAREN           null
    12     19  RPAREN           null
+   12     20  SEMICOLON        null
    13      5  IDENTIFIER       n
    13      7  ASSIGN           null
    13      9  IDENTIFIER       n
    13     11  PLUS             null
    13     13  INTEGER          1
+   13     14  SEMICOLON        null
    14      1  RCURLY           null
    15      1  PRINT            null
    15      6  LPAREN           null
-   15      7  STRING           .
+   15      7  STRING           Correct! You got it in " + n + " guesses.
    15     50  RPAREN           null
+   15     51  SEMICOLON        null
    15      0  EOF              null
 

@@ -3,6 +3,8 @@
 hidden           WHITESPACE      \s+
 hidden           COMMENT         ((//.*$)|(/[*].*[*]/))
 
+operator         NOTEQUAL        !=
+
 operator         MULTIPLY        \*
 operator         DIVIDE          /
 operator         REMAINDER       %
@@ -15,7 +17,6 @@ operator         LESS            <
 operator         GREATEQUAL      >=
 operator         GREATER         >
 operator         EQUAL           ==
-operator         NOTEQUAL        !=
 
 operator         ASSIGN          =
 

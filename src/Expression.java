@@ -9,6 +9,8 @@ enum BinaryOperator {
   LessEqual,
   Greater,
   GreaterEqual,
+  Equal,
+  NotEqual,
   Mul,
   Div,
   Rem;
@@ -27,6 +29,8 @@ enum BinaryOperator {
       case "MULTIPLY": return Mul;
       case "DIVIDE": return Div;
       case "REMAINDER": return Rem;
+      case "EQUAL": return Equal;
+      case "NOTEQUAL": return NotEqual;
       default: return null;
     }
   }
