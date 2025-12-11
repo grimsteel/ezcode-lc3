@@ -3,8 +3,11 @@ public class Tester
 	
 	public static void main(String[] args) {
 		String lex = "EZCode_lex.txt";
-
-    new Grammar("EZCode_ebnf.txt");
+		
+		Lexer lexer = new Lexer(lex, "HelloWorld.txt");
+    Parser p = new Parser(lexer.getTokens());
+    
+    System.out.println(p.parseSequence());
 
 		/*new Lexer(lex, "HelloWorld.txt");
 		new Lexer(lex, "GuessingGame.txt");

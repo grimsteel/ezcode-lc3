@@ -2,10 +2,10 @@
  ----    ---  --------------   -----
     1      1  IDENTIFIER       a
     1      3  ASSIGN           null
-    1      5  STRING           o
+    1      5  STRING           Hello
     2      1  IDENTIFIER       b
     2      3  ASSIGN           null
-    2      5  STRING           d
+    2      5  STRING           world
     3      1  IDENTIFIER       c
     3      3  ASSIGN           null
     3      5  CHARACTER        !
