@@ -244,7 +244,7 @@ class LoadStore implements Instruction {
 
   // Static initialization methods for each instruction
   public static LoadStore ld(byte dest, short offset9) {
-    return new LoadStore(Opcode.Load, dest, offset9);
+    return new LoadStore(Opcode.LoadDirect, dest, offset9);
   }
 
   public static LoadStore ldi(byte dest, short offset9) {
@@ -256,7 +256,7 @@ class LoadStore implements Instruction {
   }
 
   public static LoadStore st(byte src, short offset9) {
-    return new LoadStore(Opcode.Store, src, offset9);
+    return new LoadStore(Opcode.StoreDirect, src, offset9);
   }
 
   public static LoadStore sti(byte src, short offset9) {
@@ -274,10 +274,10 @@ class LoadStore implements Instruction {
   public String toString() {
     String m;
     switch (opcode) {
-      case Load: m = "ld"; break;
+      case LoadDirect: m = "ld"; break;
       case LoadIndirect: m = "ldi"; break;
       case LoadEffectiveAddress: m = "lea"; break;
-      case Store: m = "st"; break;
+      case StoreDirect: m = "st"; break;
       case StoreIndirect: m = "sti"; break;
       default: m = opcode.name(); break;
     }
@@ -326,11 +326,11 @@ class LoadStoreRegOffset implements Instruction {
 
   // Static initialization methods for each instruction
   public static LoadStoreRegOffset ldr(byte dest, byte base, byte offset6) {
-    return new LoadStoreRegOffset(Opcode.LoadDirect, dest, base, offset6);
+    return new LoadStoreRegOffset(Opcode.Load, dest, base, offset6);
   }
 
   public static LoadStoreRegOffset str(byte src, byte base, byte offset6) {
-    return new LoadStoreRegOffset(Opcode.StoreDirect, src, base, offset6);
+    return new LoadStoreRegOffset(Opcode.Store, src, base, offset6);
   }
 
   public LoadStoreRegOffset special(SpecialAddress addr) {
@@ -342,7 +342,7 @@ class LoadStoreRegOffset implements Instruction {
 
   @Override
   public String toString() {
-    String m = (opcode == Opcode.LoadDirect) ? "ldr" : "str";
+    String m = (opcode == Opcode.Load) ? "ldr" : "str";
     int off6 = AsmUtils.signExtend(offset6 & 0x3F, 6);
     // reg1 = dest for LDR, src for STR; reg2 = base
     return String.format("%s %s, %s, #%d", m, AsmUtils.reg(reg1), AsmUtils.reg(reg2), off6);

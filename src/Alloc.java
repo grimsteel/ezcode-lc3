@@ -1,5 +1,6 @@
 
 enum SpecialAddress {
+  // we intersperse util offsets throughout 
   NearestUtilOffset,
   CallMult,
   CallDiv,

@@ -46,7 +46,7 @@ public class Lexer {
 			int i = src.lastIndexOf(".");
 			out = src.substring(0, i) + "_TOKENS" + src.substring(i);
 		}
-		this.printFile(out);
+		//this.printFile(out);
 		
 		System.out.println(this);
 	}

@@ -49,7 +49,7 @@ public class Rule {
           else return Double.POSITIVE_INFINITY;
         }
         return Double.valueOf(matchedGroup);
-      case "BOOL":
+      case "BOOLEAN":
         return Boolean.valueOf(matchedGroup);
       case "CHARACTER":
         if (matchedGroup.length() != 1) {
