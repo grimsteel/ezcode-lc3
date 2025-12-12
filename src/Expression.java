@@ -5,7 +5,7 @@ interface Expression {
   int instructionLength();
   /** Number of registers needed to evaluate this expression */
   int numRegisters();
-  ArrayList<Instruction> emit(int startRegister);
+  ArrayList<Instruction> emit(byte startRegister);
 }
 
 enum BinaryOperator {
@@ -80,8 +80,8 @@ class BinaryExpression implements Expression {
       case BinaryOperator.NotEqual:
         // note: when this is the condition in a conditional block, the break is inlined
         // this is only used when making a boolean variable
-        // subtraction (2), set false, break, set true
-        return sub + 5;
+        // subtraction (3), set false, break, set true
+        return sub + 6;
       case BinaryOperator.Mul:
       case BinaryOperator.Div:
       case BinaryOperator.Rem:
@@ -102,22 +102,34 @@ class BinaryExpression implements Expression {
   }
 
   @Override
-  public ArrayList<Instruction> emit(int startRegister) {
+  public ArrayList<Instruction> emit(byte r0) {
+    byte r1 = (byte) (r0 + 1);
     ArrayList<Instruction> instrs = new ArrayList<>();
-    instrs.addAll(left.emit(startRegister));
-    instrs.addAll(right.emit(startRegister + 1));
-    
+    // run sub expressions
+    instrs.addAll(left.emit(r0)); // result in r0
+    instrs.addAll(right.emit(r1)); // result in r1
+
     switch (op) {
       case BinaryOperator.And:
-        instrs.add(n)
+        instrs.add(AddAnd.andWithRegister(r0, r0, r1));
+        break;
       case BinaryOperator.Add:
-        return sub + 1;
+        instrs.add(AddAnd.addWithRegister(r0, r0, r1));
+        break;
       case BinaryOperator.Or:
-        // not both, and not answer
-        return sub + 4;
+        // DeMorgan's
+        instrs.add(new Not(r0, r0));
+        instrs.add(new Not(r1, r1));
+        instrs.add(AddAnd.andWithRegister(r0, r0, r1));
+        instrs.add(new Not(r0, r0));
+        break;
       case BinaryOperator.Sub:
-        // not + add 2nd, add answer
-        return sub + 3;
+        // invert second
+        instrs.add(new Not(r1, r1));
+        instrs.add(AddAnd.addWithLiteral(r1, r1, (byte) 1));
+        // add
+        instrs.add(AddAnd.addWithRegister(r0, r0, r1));
+        break;
       case BinaryOperator.Less:
       case BinaryOperator.LessEqual:
       case BinaryOperator.Greater:
@@ -127,15 +139,30 @@ class BinaryExpression implements Expression {
         // note: when this is the condition in a conditional block, the break is inlined
         // this is only used when making a boolean variable
         // subtraction (2), set false, break, set true
-        return sub + 5;
+        // invert second
+        instrs.add(new Not(r1, r1));
+        instrs.add(AddAnd.addWithLiteral(r1, r1, (byte) 1));
+        // add - store in r1
+        instrs.add(AddAnd.addWithRegister(r1, r0, r1));
+        // r0 = 0
+        instrs.add(AddAnd.andWithLiteral(r0, r0, (byte) 0x0)); 
+        // reset condition code
+        instrs.add(AddAnd.addWithLiteral(r1, r1, (byte) 0x0));
+        // if the condition does _not_ match, skip over the +1
+        instrs.add(Branch.fromBinaryOperator(op, (short) 2).invert());
+        // r0 = 1
+        instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) 0x1));
+        break;
       case BinaryOperator.Mul:
       case BinaryOperator.Div:
       case BinaryOperator.Rem:
+        // move parameters
         // move parameters (2) + call method + retrieve result (1)
         // call method
         return sub + 4;
-      default: return sub;
     }
+    
+    return instrs;
   }
 }
 

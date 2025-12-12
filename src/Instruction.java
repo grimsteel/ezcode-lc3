@@ -40,6 +40,20 @@ class Branch implements Instruction {
     this.p = p;
   }
   
+  public static Branch fromBinaryOperator(BinaryOperator op, short offset9) {
+    switch (op) {
+      case Less:         return Branch.lt(offset9);
+      case LessEqual:    return Branch.le(offset9);
+      case Greater:      return Branch.gt(offset9);
+      case GreaterEqual: return Branch.ge(offset9);
+      case Equal:        return Branch.eq(offset9);
+      case NotEqual:     return Branch.ne(offset9);
+      default:
+        return null;
+    }
+  }
+
+  
   public static Branch eq(short offset9) {
     return new Branch(offset9, false, true, false);
   }
@@ -66,6 +80,13 @@ class Branch implements Instruction {
 
   public static Branch any(short offset9) {
     return new Branch(offset9, true, true, true);
+  }
+  
+  /**
+   * invert all flags
+   */
+  public Branch invert() {
+    return new Branch(offset9, !n, !z, !p);
   }
   
   @Override
