@@ -1,4 +1,7 @@
 enum Opcode {
+  NotAnInstruction(-1),
+
+
   Branch(0x0),
   Add(0x1),
   LoadDirect(0x2),
@@ -25,6 +28,22 @@ enum Opcode {
 interface Instruction {
   public Opcode getOpcode();
   public short emit();
+}
+
+// small helper utilities for formatting and sign-extension
+class AsmUtils {
+  static int signExtend(int value, int bits) {
+    int mask = (1 << bits) - 1;
+    int raw = value & mask;
+    int signBit = 1 << (bits - 1);
+    if ((raw & signBit) != 0) {
+      raw |= ~mask;
+    }
+    return raw;
+  }
+  static String reg(byte r) { return "r" + (r & 0x7); }
+  static String hex8(int v) { return String.format("x%02X", v & 0xFF); }
+  static String hex16(int v) { return String.format("x%04X", v & 0xFFFF); }
 }
 
 class Branch implements Instruction {
@@ -102,6 +121,17 @@ class Branch implements Instruction {
     result |= (offset9 & 0x1FF);
     return (short) result;
   }
+
+  @Override
+  public String toString() {
+    String flags = "";
+    if (n) flags += "n";
+    if (z) flags += "z";
+    if (p) flags += "p";
+    String mnemonic = "br" + (flags.isEmpty() ? "" : flags);
+    int off = AsmUtils.signExtend(offset9, 9);
+    return String.format("%s #%d", mnemonic, off);
+  }
 }
 
 /**
@@ -137,7 +167,7 @@ class AddAnd implements Instruction {
     result |= (dest & 0x7) << 9;
     // next 3 bits: left register
     result |= (left & 0x7) << 6;
-    if (isLiteral) {
+    if (!isLiteral) {
       // bit 5 = 0, next 3 bits: right register
       result |= (right & 0x7);
     } else {
@@ -163,6 +193,19 @@ class AddAnd implements Instruction {
   public static AddAnd andWithRegister(byte dest, byte left, byte rightReg) {
     return new AddAnd(Opcode.And, dest, left, false, rightReg);
   }
+
+  @Override
+  public String toString() {
+    String op = (opcode == Opcode.Add) ? "add" : "and";
+    if (!isLiteral) {
+      // per emit(): isLiteral -> register mode
+      return String.format("%s %s, %s, %s", op, AsmUtils.reg(dest), AsmUtils.reg(left), AsmUtils.reg(right));
+    } else {
+      // immediate mode (5-bit signed)
+      int imm5 = AsmUtils.signExtend(right & 0x1F, 5);
+      return String.format("%s %s, %s, #%d", op, AsmUtils.reg(dest), AsmUtils.reg(left), imm5);
+    }
+  }
 }
 
 /**
@@ -173,10 +216,13 @@ class LoadStore implements Instruction {
   byte reg;
   short offset9;
 
+  public SpecialAddress specialAddress;
+
   private LoadStore(Opcode opcode, byte reg, short offset9) {
     this.opcode = opcode;
     this.reg = reg;
     this.offset9 = offset9;
+    this.specialAddress = null;
   }
 
   @Override
@@ -216,6 +262,29 @@ class LoadStore implements Instruction {
   public static LoadStore sti(byte src, short offset9) {
     return new LoadStore(Opcode.StoreIndirect, src, offset9);
   }
+
+  public LoadStore special(SpecialAddress addr) {
+    // will be filled in later
+    this.offset9 = 0;
+    this.specialAddress = addr;
+    return this;
+  }
+
+  @Override
+  public String toString() {
+    String m;
+    switch (opcode) {
+      case Load: m = "ld"; break;
+      case LoadIndirect: m = "ldi"; break;
+      case LoadEffectiveAddress: m = "lea"; break;
+      case Store: m = "st"; break;
+      case StoreIndirect: m = "sti"; break;
+      default: m = opcode.name(); break;
+    }
+    int off = AsmUtils.signExtend(offset9, 9);
+    // register position differs: for loads dest, for stores src
+    return String.format("%s %s, #%d", m, AsmUtils.reg(reg), off);
+  }
 }
 
 /**
@@ -226,6 +295,8 @@ class LoadStoreRegOffset implements Instruction {
   byte reg1; // destination for LDR, source for STR
   byte reg2; // base register
   byte offset6;
+
+  public SpecialAddress specialAddress;
 
   private LoadStoreRegOffset(Opcode opcode, byte reg1, byte reg2, byte offset6) {
     this.opcode = opcode;
@@ -260,6 +331,21 @@ class LoadStoreRegOffset implements Instruction {
 
   public static LoadStoreRegOffset str(byte src, byte base, byte offset6) {
     return new LoadStoreRegOffset(Opcode.StoreDirect, src, base, offset6);
+  }
+
+  public LoadStoreRegOffset special(SpecialAddress addr) {
+    // will be filled in later
+    this.offset6 = 0;
+    this.specialAddress = addr;
+    return this;
+  }
+
+  @Override
+  public String toString() {
+    String m = (opcode == Opcode.LoadDirect) ? "ldr" : "str";
+    int off6 = AsmUtils.signExtend(offset6 & 0x3F, 6);
+    // reg1 = dest for LDR, src for STR; reg2 = base
+    return String.format("%s %s, %s, #%d", m, AsmUtils.reg(reg1), AsmUtils.reg(reg2), off6);
   }
 }
 
@@ -301,6 +387,11 @@ class Trap implements Instruction {
   public static Trap halt() {
     return new Trap((byte) 0x25);
   }
+
+  @Override
+  public String toString() {
+    return String.format("trap %s", AsmUtils.hex8(intCode));
+  }
 }
 
 class Not implements Instruction {
@@ -329,6 +420,11 @@ class Not implements Instruction {
     // bits 5-0: all 1s for NOT instruction
     result |= 0x3F;
     return result;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("not %s, %s", AsmUtils.reg(dest), AsmUtils.reg(src));
   }
 }
 
@@ -360,6 +456,12 @@ class Jmp implements Instruction {
     // ret is a jmp to r7
     return new Jmp((byte) 7);
   }
+
+  @Override
+  public String toString() {
+    if ((baseReg & 0x7) == 7) return "ret";
+    return String.format("jmp %s", AsmUtils.reg(baseReg));
+  }
 }
 
 
@@ -377,6 +479,15 @@ class Jsr implements Instruction {
   @Override
   public Opcode getOpcode() {
     return Opcode.JumpSubroutine;
+  }
+
+  public SpecialAddress specialAddress;
+
+  public Jsr special(SpecialAddress addr) {
+    // will be filled in later
+    this.offset11 = 0;
+    this.specialAddress = addr;
+    return this;
   }
 
   @Override
@@ -406,5 +517,35 @@ class Jsr implements Instruction {
 
   public static Jsr jsrr(byte baseReg) {
     return new Jsr(true, baseReg, (short)0);
+  }
+  @Override
+  public String toString() {
+    if (isRegisterMode) {
+      return String.format("jsrr %s", AsmUtils.reg(baseReg));
+    } else {
+      int off11 = AsmUtils.signExtend(offset11 & 0x7FF, 11);
+      return String.format("jsr #%d", off11);
+    }
+  }
+}
+
+// memory value
+class Word implements Instruction {
+  short word;
+  public Word(short word) {
+    this.word = word;
+  }
+  @Override
+  public short emit() {
+    return word;
+  }
+  @Override
+  public Opcode getOpcode() {
+    return Opcode.NotAnInstruction;
+  }
+
+  @Override
+  public String toString() {
+    return String.format(".fill %s", AsmUtils.hex16(word));
   }
 }

@@ -85,9 +85,9 @@ class BinaryExpression implements Expression {
       case BinaryOperator.Mul:
       case BinaryOperator.Div:
       case BinaryOperator.Rem:
-        // move parameters (2) + call method + retrieve result (1)
+        // memory offset (1) + move parameters (2) + call method + retrieve result (1)
         // call method
-        return sub + 4;
+        return sub + 5;
       default: return sub;
     }
   }
@@ -96,14 +96,24 @@ class BinaryExpression implements Expression {
   public int numRegisters() {
     // 1. evaluate left -> r0, may use r0..rn
     // 2. evaluate right -> r1, may use r1..rn, r0 needed for (1) result
-    // all operations can be calculated with only r0 and r1
-    return 
-      Math.max(left.numRegisters(), right.numRegisters() + 1);
+    // all operations can be calculated with only r0 and r1 except mul/div/rem which require register for mem address calc
+    int sub = Math.max(left.numRegisters(), right.numRegisters() + 1);;
+
+   switch (op) {
+    case BinaryOperator.Mul:
+    case BinaryOperator.Div:
+    case BinaryOperator.Rem:
+      // extra register for offset calc
+      return sub + 1;
+    default:
+      return sub;
+   }
   }
 
   @Override
   public ArrayList<Instruction> emit(byte r0) {
     byte r1 = (byte) (r0 + 1);
+    byte r2 = (byte) (r0 + 2);
     ArrayList<Instruction> instrs = new ArrayList<>();
     // run sub expressions
     instrs.addAll(left.emit(r0)); // result in r0
@@ -149,17 +159,19 @@ class BinaryExpression implements Expression {
         // reset condition code
         instrs.add(AddAnd.addWithLiteral(r1, r1, (byte) 0x0));
         // if the condition does _not_ match, skip over the +1
-        instrs.add(Branch.fromBinaryOperator(op, (short) 2).invert());
+        instrs.add(Branch.fromBinaryOperator(op, (short) 1).invert());
         // r0 = 1
         instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) 0x1));
         break;
       case BinaryOperator.Mul:
       case BinaryOperator.Div:
       case BinaryOperator.Rem:
-        // move parameters
-        // move parameters (2) + call method + retrieve result (1)
-        // call method
-        return sub + 4;
+        instrs.add(LoadStore.ld(r2, (short) 0).special(SpecialAddress.NearestUtilOffset));
+        instrs.add(LoadStoreRegOffset.str(r0, r2, (byte) 0).special(SpecialAddress.Alu0));
+        instrs.add(LoadStoreRegOffset.str(r1, r2, (byte) 0).special(SpecialAddress.Alu0));
+        instrs.add(Jsr.jsr((short) 0).special(op == BinaryOperator.Mul ? SpecialAddress.CallMult : SpecialAddress.CallDiv));
+        instrs.add(LoadStoreRegOffset.ldr(r0, r2, (byte) 0).special(op == BinaryOperator.Rem ? SpecialAddress.AluRet1 : SpecialAddress.AluRet0));
+        break;
     }
     
     return instrs;
@@ -208,9 +220,19 @@ class UnaryExpression implements Expression {
   }
 
   @Override
-  public ArrayList<Instruction> emit() {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'emit'");
+  public ArrayList<Instruction> emit(byte r0) {
+    ArrayList<Instruction> instrs = new ArrayList<>();
+    instrs.addAll(expr.emit(r0));
+    switch (op) {
+      case UnaryOperator.Not:
+        instrs.add(new Not(r0, r0));
+        break;
+      case UnaryOperator.Negate:
+        instrs.add(new Not(r0, r0));
+        instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) 1));
+        break;
+    }
+    return instrs;
   }
 }
 
@@ -228,7 +250,7 @@ class Ident implements Expression {
 
   @Override
   public int instructionLength() {
-    return 1;
+    return 2;
   }
 
   @Override
@@ -238,9 +260,13 @@ class Ident implements Expression {
   }
 
   @Override
-  public ArrayList<Instruction> emit() {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'emit'");
+  public ArrayList<Instruction> emit(byte r0) {
+    ArrayList<Instruction> instrs = new ArrayList<>();
+    // get util location, then load variable
+    instrs.add(LoadStore.ld(r0, (short) 0).special(SpecialAddress.NearestUtilOffset));
+    instrs.add(LoadStoreRegOffset.ldr(r0, r0, (byte) 0).special(SpecialAddress.variable(ident)));
+    
+    return instrs;
   }
 }
 
@@ -279,7 +305,7 @@ class Literal implements Expression {
 
   @Override
   public int instructionLength() {
-    return 1;
+    return 3;
   }
 
   @Override
@@ -288,9 +314,33 @@ class Literal implements Expression {
   }
 
   @Override
-  public ArrayList<Instruction> emit() {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'emit'");
+  public ArrayList<Instruction> emit(byte r0) {
+    ArrayList<Instruction> instrs = new ArrayList<>();
+
+    short value = 0;
+
+    switch (type) {
+      case LiteralType.String:
+        throw new UnsupportedOperationException("Strings are not yet supported");
+      case LiteralType.Float:
+        throw new UnsupportedOperationException("Floats are not yet supported");
+      case LiteralType.Int:
+        value = ((Integer) this.value).shortValue();
+        break;
+      case LiteralType.Char:
+        value = (short) ((Character) this.value).charValue();
+        break;
+      case LiteralType.Bool:
+        value = (short) (((Boolean) this.value).booleanValue() ? 1 : 0);
+        break;
+    }
+    
+    // emit load, emit break, emit word
+    instrs.add(LoadStore.ld(r0, (short) 1));
+    instrs.add(Branch.any((short) 1)); // jump over `value`
+    instrs.add(new Word(value));
+    
+    return instrs;
   }
 }
 
@@ -313,8 +363,8 @@ class InputExpression implements Expression {
   }
 
   @Override
-  public ArrayList<Instruction> emit() {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'emit'");
+  public ArrayList<Instruction> emit(byte r0) {
+    // TODO: support strings
+    throw new UnsupportedOperationException("Strings are not yet supported");
   }
 }
