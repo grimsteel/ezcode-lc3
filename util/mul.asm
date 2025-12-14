@@ -8,16 +8,18 @@ str r1, r6, #1
 add r6, r6, #2
 jsr div
 add r6, r6, #-1
-jsr print_num
+jsr iprint
 halt
 a: .fill -4
 b: .fill 5
 stack: .blkw #16
 
+;; flag instruction so our assembler knows the real code starts here
+ezcode_lc3_start_assemble: halt
+
 ;; MULT: multiply stack[r6 - 1] by stack [r6 - 2]
 ;; Algorithm: bitwise place-value add/shift
-mult:
-  st r0, alu_tmp_0          ; save registers
+mul:  st r0, alu_tmp_0          ; save registers
   st r1, alu_tmp_1
   st r2, alu_tmp_2
   st r3, alu_tmp_3
@@ -55,8 +57,7 @@ mult_add_done:              ;   }
  
 ;; DIV: divide stack[r6 - 2] by stack[r6 - 1]
 ;; Algorithm: ts pmo
-div:
-  st r0, alu_tmp_0          ; save registers
+div:  st r0, alu_tmp_0          ; save registers
   st r1, alu_tmp_1
   st r2, alu_tmp_2
   st r3, alu_tmp_3
@@ -131,8 +132,7 @@ div_err:
 ;; digits until the result is non negative.
 ;; Then, prints this digit and moves on to the next
 ;; place value.
-print_num:
-    add r6, r6, #-1             ; pop stack
+iprint: add r6, r6, #-1             ; pop stack
 	ldr r1, r6, #0
 	
 	add r4, r1, #0              ; if r4 == 0, we should print 0s
@@ -184,17 +184,27 @@ print_zero:
 	out
 	ret
 ; char literals
-zero_ascii: .fill x30
-dash_ascii: .fill x2D
+zero_ascii:
+.fill x30
+dash_ascii:
+.fill x2D
 ; alu storage
-alu_tmp_0 .fill #0
-alu_tmp_1 .fill #0
-alu_tmp_2 .fill #0
-alu_tmp_3 .fill #0
-alu_tmp_4 .fill #0
-div_buf: .blkw #16
-div_buf_end: .fill #0
-div_err_msg: .stringz "Division by 0\n"
+alu_tmp_0
+.fill #0
+alu_tmp_1
+.fill #0
+alu_tmp_2
+.fill #0
+alu_tmp_3
+.fill #0
+alu_tmp_4
+.fill #0
+div_buf:
+.blkw #16
+div_buf_end:
+.fill #0
+div_err_msg:
+.stringz "Division by 0\n"
 digits:
 .fill x8AD0 ; -3 EE 4
 .fill xB1E0 ; -2 EE 4
