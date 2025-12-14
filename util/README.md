@@ -17,4 +17,5 @@ All three subroutines are are O(1) time complexity in the values of the numbers.
 ## Stack Conventions
 
 `r6` stores the memory address _after_ the top stack value.
-Division divides `stack[r6 - 2] / stack[r6 - 1]`, so the dividend is pushed first, followed by the divisor.
+Division divides `stack[r6 - 2] / stack[r6 - 1]`, so the dividend should be pushed first, followed by the divisor.
+`div` pushes the quotient first, followed by the remainder

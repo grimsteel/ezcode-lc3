@@ -7,10 +7,11 @@ str r0, r6, #0
 str r1, r6, #1
 add r6, r6, #2
 jsr div
+add r6, r6, #-1
 jsr print_num
 halt
-a: .fill 45
-b: .fill 55
+a: .fill -4
+b: .fill 5
 stack: .blkw #16
 
 ;; MULT: multiply stack[r6 - 1] by stack [r6 - 2]
@@ -107,11 +108,11 @@ div_loop_done:
   ;; Quotient Negation
   add r0, r0, 0
   brzp div_neg_done:        ; if should negate
-  not r4, r4                ; negate reslt
+  not r4, r4                ; negate result
   add r4, r4, #1
 div_neg_done:
-  add r6, r6, #-1           ; push stack (-2 + 1 = -1, we only update r6 once)
-  str r4, r6, #-1
+  str r1, r6, #-1           ; push quotient and remainder to stack
+  str r4, r6, #-2
   ld r0, alu_tmp_0          ; restore registers
   ld r1, alu_tmp_1
   ld r2, alu_tmp_2
@@ -134,8 +135,11 @@ print_num:
     add r6, r6, #-1             ; pop stack
 	ldr r1, r6, #0
 	
+	add r4, r1, #0              ; if r4 == 0, we should print 0s
+	brz print_zero
+	
 	;; Operand Negation
-	brzp print_negate_done      ; if `alu0` < 0
+	brp print_negate_done      ; if `alu0` < 0
 	not r1, r1                  ;   alu0 = -alu0
     add r1, r1, 1
 	ld r0, dash_ascii           ;   print negative sign
@@ -153,8 +157,11 @@ print_num:
 	add r2, r2, 1               ;   try next digit (smaller)
 	add r3, r3, -1
 	brp print_digit_done        ;   if r3 == 0 (we tried all digits from 9-1)
+	add r4, r4, 0               ;   don't print 0 if r4 != 0
+	brnp print_zero_done
 	ld r0, zero_ascii           ;   print  0
 	out
+	print_zero_done:
 	add r3, r3, 9               ;   start back at 9 (r2 already points to 9)
 	br print_digit_done         ; else
 	print_digit_correct:
@@ -162,6 +169,7 @@ print_num:
 	ld r0, zero_ascii           ; print digit (stored in r3)
 	add r0, r0, r3         
 	out
+	and r4, r4, 0               ; r4 = 0: enable printing 0s
 	add r2, r2, r3              ; skip digit ptr to next place value 9
 	and r3, r3, 0               ; r3 = 0
 	add r3, r3, 9
@@ -169,6 +177,11 @@ print_num:
 	ldr r0, r2, 0               ; r0 = *r2
 	brnp print_digit_loop       ; r0 == 0 if we reached end
 
+	ret
+;; printing just a 0 doesn't work well with the leading zero code
+print_zero:
+    ld r0, zero_ascii           ;   print  0
+	out
 	ret
 ; char literals
 zero_ascii: .fill x30
