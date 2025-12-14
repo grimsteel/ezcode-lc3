@@ -1,11 +1,9 @@
 import java.util.ArrayList;
 
 interface Expression {
-  /** Number of LC-3 instructions needed for this expression */
-  int instructionLength();
   /** Number of registers needed to evaluate this expression */
   int numRegisters();
-  ArrayList<Instruction> emit(byte startRegister);
+  ArrayList<Instruction> emit(byte startRegister, DataBlock datablock);
 }
 
 enum BinaryOperator {
@@ -59,38 +57,7 @@ class BinaryExpression implements Expression {
     return String.format("BinaryExpression(%s, %s, %s)", left, op, right);
   }
 
-  @Override
-  public int instructionLength() {
-    int sub = left.instructionLength() + right.instructionLength();
-    switch (op) {
-      case BinaryOperator.And:
-      case BinaryOperator.Add:
-        return sub + 1;
-      case BinaryOperator.Or:
-        // not both, and not answer
-        return sub + 4;
-      case BinaryOperator.Sub:
-        // not + add 2nd, add answer
-        return sub + 3;
-      case BinaryOperator.Less:
-      case BinaryOperator.LessEqual:
-      case BinaryOperator.Greater:
-      case BinaryOperator.GreaterEqual:
-      case BinaryOperator.Equal:
-      case BinaryOperator.NotEqual:
-        // note: when this is the condition in a conditional block, the break is inlined
-        // this is only used when making a boolean variable
-        // subtraction (3), set false, break, set true
-        return sub + 6;
-      case BinaryOperator.Mul:
-      case BinaryOperator.Div:
-      case BinaryOperator.Rem:
-        // memory offset (1) + move parameters (2) + call method + retrieve result (1)
-        // call method
-        return sub + 5;
-      default: return sub;
-    }
-  }
+
 
   @Override
   public int numRegisters() {
@@ -98,26 +65,17 @@ class BinaryExpression implements Expression {
     // 2. evaluate right -> r1, may use r1..rn, r0 needed for (1) result
     // all operations can be calculated with only r0 and r1 except mul/div/rem which require register for mem address calc
     int sub = Math.max(left.numRegisters(), right.numRegisters() + 1);;
-
-   switch (op) {
-    case BinaryOperator.Mul:
-    case BinaryOperator.Div:
-    case BinaryOperator.Rem:
-      // extra register for offset calc
-      return sub + 1;
-    default:
-      return sub;
-   }
+    return sub;
   }
 
   @Override
-  public ArrayList<Instruction> emit(byte r0) {
+  public ArrayList<Instruction> emit(byte r0, DataBlock datablock) {
     byte r1 = (byte) (r0 + 1);
     byte r2 = (byte) (r0 + 2);
     ArrayList<Instruction> instrs = new ArrayList<>();
     // run sub expressions
-    instrs.addAll(left.emit(r0)); // result in r0
-    instrs.addAll(right.emit(r1)); // result in r1
+    instrs.addAll(left.emit(r0, datablock)); // result in r0
+    instrs.addAll(right.emit(r1, datablock)); // result in r1
 
     switch (op) {
       case BinaryOperator.And:
@@ -166,11 +124,18 @@ class BinaryExpression implements Expression {
       case BinaryOperator.Mul:
       case BinaryOperator.Div:
       case BinaryOperator.Rem:
-        instrs.add(LoadStore.ld(r2, (short) 0).special(SpecialAddress.NearestUtilOffset));
-        instrs.add(LoadStoreRegOffset.str(r0, r2, (byte) 0).special(SpecialAddress.Alu0));
-        instrs.add(LoadStoreRegOffset.str(r1, r2, (byte) 0).special(SpecialAddress.Alu0));
+        // push stack
+        instrs.addAll(StackUtils.push(r0, r1));
         instrs.add(Jsr.jsr((short) 0).special(op == BinaryOperator.Mul ? SpecialAddress.CallMult : SpecialAddress.CallDiv));
-        instrs.add(LoadStoreRegOffset.ldr(r0, r2, (byte) 0).special(op == BinaryOperator.Rem ? SpecialAddress.AluRet1 : SpecialAddress.AluRet0));
+        if (op == BinaryOperator.Mul) {
+          instrs.addAll(StackUtils.pop(r0));
+        } else {
+          // div pushes the quotient first, so -2
+          byte stackOffset = op == BinaryOperator.Rem ? (byte) -1 : (byte) -2;
+          instrs.add(StackUtils.at(r0, stackOffset));
+          // adjust SP
+          instrs.add(StackUtils.adjustSP((byte) -2));
+        }
         break;
     }
     
@@ -205,24 +170,15 @@ class UnaryExpression implements Expression {
   }
 
   @Override
-  public int instructionLength() {
-    if (op == UnaryOperator.Not)
-      return expr.instructionLength() + 1;
-    else
-      // not + add 1
-      return expr.instructionLength() + 2;
-  }
-
-  @Override
   public int numRegisters() {
     // no additional registers needed for this - just operate on result
     return expr.numRegisters();
   }
 
   @Override
-  public ArrayList<Instruction> emit(byte r0) {
+  public ArrayList<Instruction> emit(byte r0, DataBlock datablock) {
     ArrayList<Instruction> instrs = new ArrayList<>();
-    instrs.addAll(expr.emit(r0));
+    instrs.addAll(expr.emit(r0, datablock));
     switch (op) {
       case UnaryOperator.Not:
         instrs.add(new Not(r0, r0));
@@ -249,22 +205,18 @@ class Ident implements Expression {
   }
 
   @Override
-  public int instructionLength() {
-    return 2;
-  }
-
-  @Override
   public int numRegisters() {
     // load directly into register
     return 1;
   }
 
   @Override
-  public ArrayList<Instruction> emit(byte r0) {
+  public ArrayList<Instruction> emit(byte r0, DataBlock datablock) {
     ArrayList<Instruction> instrs = new ArrayList<>();
-    // get util location, then load variable
-    instrs.add(LoadStore.ld(r0, (short) 0).special(SpecialAddress.NearestUtilOffset));
-    instrs.add(LoadStoreRegOffset.ldr(r0, r0, (byte) 0).special(SpecialAddress.variable(ident)));
+    // get the data block offset
+    instrs.add(LoadStore.ld(r0, (short) 0).special(SpecialAddress.NearestDataBlock));
+    // load from offset
+    instrs.add(LoadStoreRegOffset.ldr(r0, r0, datablock.getVariableOffset(ident)));
     
     return instrs;
   }
@@ -292,6 +244,7 @@ enum LiteralType {
 class Literal implements Expression {
   public LiteralType type;
   public Object value;
+  public byte constantIndex;
 
   public Literal(LiteralType type, Object value) {
     this.type = type;
@@ -304,24 +257,18 @@ class Literal implements Expression {
   }
 
   @Override
-  public int instructionLength() {
-    return 3;
-  }
-
-  @Override
   public int numRegisters() {
     return 1;
   }
-
-  @Override
-  public ArrayList<Instruction> emit(byte r0) {
-    ArrayList<Instruction> instrs = new ArrayList<>();
-
+  
+  public short shortValue() {
     short value = 0;
 
     switch (type) {
       case LiteralType.String:
-        throw new UnsupportedOperationException("Strings are not yet supported");
+        // placeholder when we don't know address
+        value = 0;
+        break;
       case LiteralType.Float:
         throw new UnsupportedOperationException("Floats are not yet supported");
       case LiteralType.Int:
@@ -335,11 +282,31 @@ class Literal implements Expression {
         break;
     }
     
-    // emit load, emit break, emit word
-    instrs.add(LoadStore.ld(r0, (short) 1));
-    instrs.add(Branch.any((short) 1)); // jump over `value`
-    instrs.add(new Word(value));
+    return value;
+  }
+  
+  public boolean canInline() {
+    if (type == LiteralType.String) return false;
     
+    // whether we can inline in a single add instruction
+    short value = shortValue();
+    // 6 bit signed
+    return value >= -32 && value < 32;
+  }
+
+  @Override
+  public ArrayList<Instruction> emit(byte r0, DataBlock datablock) {
+    ArrayList<Instruction> instrs = new ArrayList<>();
+    
+    if (canInline()) {
+      instrs.add(AddAnd.andWithLiteral(r0, r0, (byte) 0));
+      instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) shortValue()));
+    } else {
+      // get the data block offset
+      instrs.add(LoadStore.ld(r0, (short) 0).special(SpecialAddress.NearestDataBlock));
+      // load from offset
+      instrs.add(LoadStoreRegOffset.ldr(r0, r0, datablock.getConstantOffset(constantIndex)));
+    }
     return instrs;
   }
 }
@@ -351,19 +318,13 @@ class InputExpression implements Expression {
   }
 
   @Override
-  public int instructionLength() {
-    // call input subroutine, load from input return address
-    return 2;
-  }
-
-  @Override
   public int numRegisters() {
     // load result into register, input subroutine preserves registers
     return 1;
   }
 
   @Override
-  public ArrayList<Instruction> emit(byte r0) {
+  public ArrayList<Instruction> emit(byte r0, DataBlock datablock) {
     // TODO: support strings
     throw new UnsupportedOperationException("Strings are not yet supported");
   }

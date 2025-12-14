@@ -2,6 +2,8 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.List;
 
+import javax.xml.crypto.Data;
+
 public class Tester
 {
   /**
@@ -23,14 +25,14 @@ public class Tester
     String objName = String.format("%s.obj", programName);
 		
 		Lexer lexer = new Lexer(lex, String.format("%s.ezc", programName));
-    Parser p = new Parser(lexer.getTokens());
+		DataBlock db = new DataBlock();
+    Parser p = new Parser(lexer.getTokens(), db);
     
     Expression a = p.parseExpression();
     System.out.println(a);
     System.out.println(a.numRegisters());
-    System.out.println(a.instructionLength());
 
-    List<Instruction> instrs = a.emit((byte) 0);
+    List<Instruction> instrs = a.emit((byte) 0, db);
 
     System.out.printf("Writing assembly bytecode to %s\n", binName);
     BufferedWriter writer = new BufferedWriter(new FileWriter(binName));    

@@ -1,7 +1,9 @@
 import java.util.ArrayList;
 import java.util.List;
 
-public class Parser {  
+public class Parser {
+  DataBlock dataBlock;
+  
   List<Token> tokens;
   int pos = 0;
   
@@ -31,8 +33,9 @@ public class Parser {
     return null;
   }
   
-  public Parser(List<Token> tokens) {
+  public Parser(List<Token> tokens, DataBlock db) {
     this.tokens = tokens;
+    this.dataBlock = db;
   }
   
   ArrayList<Statement> parseSequence(boolean root) {
@@ -314,14 +317,20 @@ public class Parser {
     switch (next.getTerminal()) {
       case "IDENTIFIER":
         pos++;
-        return new Ident((String) next.getValue());
+        Ident i = new Ident((String) next.getValue());
+        // register variable
+        dataBlock.addVariable(i.ident);
+        return i;
       case "BOOLEAN":
       case "FLOAT":
       case "INTEGER":
       case "CHARACTER":
       case "STRING":
         pos++;
-        return new Literal(LiteralType.getType(next.getTerminal()), next.getValue());
+        Literal l = new Literal(LiteralType.getType(next.getTerminal()), next.getValue());
+        // register this literal
+        dataBlock.addLiteral(l);
+        return l;
     }
     
     Expression paren = parseParen();

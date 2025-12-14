@@ -1,7 +1,7 @@
+import java.util.ArrayList;
+
 enum Opcode {
   NotAnInstruction(-1),
-
-
   Branch(0x0),
   Add(0x1),
   LoadDirect(0x2),
@@ -547,5 +547,39 @@ class Word implements Instruction {
   @Override
   public String toString() {
     return String.format(".fill %s", AsmUtils.hex16(word));
+  }
+}
+
+class StackUtils {
+  // Push register(s) onto the stack (in order)
+  public static ArrayList<Instruction> push(byte... regs) {
+    ArrayList<Instruction> seq = new ArrayList<>();
+    // Push all registers first, then increment SP once at the end
+    for (int i = 0; i < regs.length; ++i) {
+      seq.add(LoadStoreRegOffset.str(regs[i], (byte) 6, (byte) i));
+    }
+    seq.add(adjustSP((byte) regs.length));
+    return seq;
+  }
+
+  // Pop register(s) from the stack (in reverse order)
+  public static ArrayList<Instruction> pop(byte... regs) {
+    ArrayList<Instruction> seq = new ArrayList<>();
+    // Decrement SP first, then pop all registers in reverse order
+    seq.add(adjustSP((byte)-regs.length));
+    for (int i = 0; i < regs.length; ++i) {
+      seq.add(LoadStoreRegOffset.ldr(regs[regs.length - 1 - i], (byte)6, (byte)i));
+    }
+    return seq;
+  }
+  
+  // Load the value at the specified stack offset into the given register
+  public static Instruction at(byte reg, byte offset) {
+    return LoadStoreRegOffset.ldr(reg, (byte)6, offset);
+  }
+  
+  // Modify r6 by the given signed amount
+  public static Instruction adjustSP(byte amount) {
+    return AddAnd.addWithLiteral((byte)6, (byte)6, amount);
   }
 }
