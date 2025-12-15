@@ -1,14 +1,7 @@
 import java.util.ArrayList;
 
-enum StatementType {
-  Assignment,
-  Conditional,
-  Print,
-  Block
-}
-
 interface Statement {
-  public StatementType getType();
+  ArrayList<Instruction> emit(DataBlock datablock);
 }
 
 class Assignment implements Statement {
@@ -19,10 +12,17 @@ class Assignment implements Statement {
     this.ident = ident;
     this.expr = expr;
   }
-
+  
   @Override
-  public StatementType getType() {
-    return StatementType.Assignment;
+  public ArrayList<Instruction> emit(DataBlock datablock) {
+    ArrayList<Instruction> instrs = new ArrayList<Instruction>();
+    // Evaluate the expression, result in r0
+    instrs.addAll(expr.emit((byte) 0, datablock));
+    // data block offset
+    instrs.add(LoadStore.ld((byte) 1, (byte) 0).special(SpecialAddress.NearestDataBlock));
+    // store at specific offset
+    instrs.add(LoadStoreRegOffset.str((byte) 1, (byte) 0, datablock.getVariableOffset(ident)));
+    return instrs;
   }
 
   @Override
@@ -42,10 +42,10 @@ class ConditionalBlock implements Statement {
     this.elseBody = elseBody;
     this.repeat = repeat;
   }
-
+  
   @Override
-  public StatementType getType() {
-    return StatementType.Conditional;
+  public ArrayList<Instruction> emit(DataBlock datablock) {
+    throw new UnsupportedOperationException("emit not implemented for ConditionalBlock");
   }
 
   @Override
@@ -58,9 +58,27 @@ class PrintStatement implements Statement {
   public PrintStatement(ArrayList<Expression> params) {
     this.params = params;
   }
+  
   @Override
-  public StatementType getType() {
-    return StatementType.Print;
+  public ArrayList<Instruction> emit(DataBlock datablock) {
+    ArrayList<Instruction> instrs = new ArrayList<Instruction>();
+    byte r0 = 0;
+    for (Expression expr : params) {
+      // result in r0
+      instrs.addAll(expr.emit(r0, datablock));
+      // push to stack
+      instrs.addAll(StackUtils.push(r0));
+      instrs.add(Jsr.jsr((short) 0).special(SpecialAddress.CallPrint));
+      
+      instrs.add(AddAnd.andWithLiteral(r0, r0, (byte) 0x00));
+      instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) 0x1f));
+      instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) 0x01));
+      instrs.add(Trap.out());
+    }
+    instrs.add(AddAnd.andWithLiteral(r0, r0, (byte) 0x00));
+    instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) 0x0a));
+    instrs.add(Trap.out());
+    return instrs;
   }
 
   @Override
@@ -76,8 +94,13 @@ class Block implements Statement {
   }
 
   @Override
-  public StatementType getType() {
-    return StatementType.Block;
+  public ArrayList<Instruction> emit(DataBlock datablock) {
+    // exec each individual statement
+    ArrayList<Instruction> instrs = new ArrayList<Instruction>();
+    for (Statement stmt : body) {
+      instrs.addAll(stmt.emit(datablock));
+    }
+    return instrs;
   }
 
   @Override
@@ -87,11 +110,12 @@ class Block implements Statement {
 }
 class EmptyStatement implements Statement {
   @Override
-  public StatementType getType() {
-    // no type
-    return null;
+  public ArrayList<Instruction> emit(DataBlock datablock) {
+    // this gets output when you do `;;` - emit a nop
+    ArrayList<Instruction> instrs = new ArrayList<Instruction>();
+    instrs.add(Branch.nop());
+    return instrs;
   }
-
   @Override
   public String toString() {
     return String.format("EmptyStatement()");

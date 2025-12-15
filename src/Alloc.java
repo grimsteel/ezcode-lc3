@@ -10,10 +10,12 @@ import java.util.HashMap;
  * towards the end of compilation when these addresses can be resolved.
  */
 enum SpecialAddress {
-  // we intersperse util offsets throughout 
-  NearestDataBlock,
+  NearestDataBlock, // offset to nearest multiple of 512
+  DataBlock, // actual data block address
+  StackStart, // start of the stack
   CallMult,
-  CallDiv;
+  CallDiv,
+  CallPrint;
 }
 
 class DataBlock {
@@ -35,17 +37,19 @@ class DataBlock {
   }
   
   /**
-  * Configure the memory addresses of the strings
-  * returns the new start of the string block
+  * Configure the memory addresses of the data block
+  * Returns the mid address used for offset calcs
  */
-  public short setStringAddress(short stringBlockStart) {
+  public short setAddress(short dataBlockStart) {
+    short stringBlockStart = (short) (dataBlockStart + MAX_VARIABLES + MAX_CONSTANTS);
     for (String str : strings.keySet()) {
       byte constantIdx = strings.get(str);
       // update the constant value to the new value
       constantValues.set(constantIdx, stringBlockStart);
       stringBlockStart += (short) (((String) str).length());
     }
-    return stringBlockStart;
+    
+    return (short) (dataBlockStart + MAX_VARIABLES);
   }
   
   /**
@@ -92,6 +96,8 @@ class DataBlock {
   * @param literal
   */
   public void addLiteral(Literal literal) {
+    if (literal.canInline()) return;
+    
     if (constantValues.size() >= MAX_CONSTANTS) {
       throw new IllegalStateException("Exceeded maximum number of constants (" + MAX_CONSTANTS + ")");
     }
@@ -106,7 +112,7 @@ class DataBlock {
     if (variableIndices.size() >= MAX_VARIABLES) {
       throw new IllegalStateException("Exceeded maximum number of variables (" + MAX_VARIABLES + ")");
     } else {
-      byte idx = (byte) (variableIndices.size() - 1);
+      byte idx = (byte) (variableIndices.size());
       variableIndices.put(variable, idx);
     }
   }

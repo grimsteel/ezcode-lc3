@@ -30,6 +30,14 @@ interface Instruction {
   public short emit();
 }
 
+// An instruction that may have an unresolved special address
+interface UnresolvedSpecialInstruction {
+  // nullable
+  public SpecialAddress getSpecialType();
+  public void setAddress(short address);
+}
+  
+
 // small helper utilities for formatting and sign-extension
 class AsmUtils {
   static int signExtend(int value, int bits) {
@@ -99,6 +107,10 @@ class Branch implements Instruction {
 
   public static Branch any(short offset9) {
     return new Branch(offset9, true, true, true);
+  }
+  
+  public static Branch nop() {
+    return new Branch((short)0, false, false, false);
   }
   
   /**
@@ -211,7 +223,7 @@ class AddAnd implements Instruction {
 /**
 * Instructions with one register and an offset9: LD, LDI, LEA, ST, STI
 */
-class LoadStore implements Instruction {
+class LoadStore implements Instruction, UnresolvedSpecialInstruction {
   Opcode opcode;
   byte reg;
   short offset9;
@@ -222,6 +234,17 @@ class LoadStore implements Instruction {
     this.opcode = opcode;
     this.reg = reg;
     this.offset9 = offset9;
+    this.specialAddress = null;
+  }
+    
+  @Override
+  public SpecialAddress getSpecialType() {
+    return specialAddress;
+  }
+
+  @Override
+  public void setAddress(short address) {
+    this.offset9 = address;
     this.specialAddress = null;
   }
 
@@ -290,7 +313,7 @@ class LoadStore implements Instruction {
 /**
 * Instructions with two registers and an offset6: LDR, STR
 */
-class LoadStoreRegOffset implements Instruction {
+class LoadStoreRegOffset implements Instruction, UnresolvedSpecialInstruction {
   Opcode opcode;
   byte reg1; // destination for LDR, source for STR
   byte reg2; // base register
@@ -303,6 +326,17 @@ class LoadStoreRegOffset implements Instruction {
     this.reg1 = reg1;
     this.reg2 = reg2;
     this.offset6 = offset6;
+  }
+  
+  @Override
+  public SpecialAddress getSpecialType() {
+    return specialAddress;
+  }
+
+  @Override
+  public void setAddress(short address) {
+    this.offset6 = (byte) address;
+    this.specialAddress = null;
   }
 
   @Override
@@ -465,7 +499,7 @@ class Jmp implements Instruction {
 }
 
 
-class Jsr implements Instruction {
+class Jsr implements Instruction, UnresolvedSpecialInstruction {
   boolean isRegisterMode; // true for JSRR, false for JSR
   byte baseReg;           // used in jsrr
   short offset11;         // used in jsr 
@@ -488,6 +522,17 @@ class Jsr implements Instruction {
     this.offset11 = 0;
     this.specialAddress = addr;
     return this;
+  }
+  
+  @Override
+  public SpecialAddress getSpecialType() {
+    return specialAddress;
+  }
+
+  @Override
+  public void setAddress(short address) {
+    this.offset11 = address;
+    this.specialAddress = null;
   }
 
   @Override
@@ -530,7 +575,7 @@ class Jsr implements Instruction {
 }
 
 // memory value
-class Word implements Instruction {
+class Word implements Instruction, UnresolvedSpecialInstruction {
   short word;
   public Word(short word) {
     this.word = word;
@@ -542,6 +587,25 @@ class Word implements Instruction {
   @Override
   public Opcode getOpcode() {
     return Opcode.NotAnInstruction;
+  }
+  
+  public SpecialAddress specialAddress;
+
+  public static Word special(SpecialAddress addr) {
+    Word w = new Word((short) 0);
+    w.specialAddress = addr;
+    return w;
+  }
+  
+  @Override
+  public SpecialAddress getSpecialType() {
+    return specialAddress;
+  }
+
+  @Override
+  public void setAddress(short address) {
+    this.word = address;
+    this.specialAddress = null;
   }
 
   @Override
