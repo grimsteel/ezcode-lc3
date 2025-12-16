@@ -4,19 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Tester
-{
-  /**
-   * Print a short value as a binary string with 0s and 1s. The length will be exactly 16
-   */
-  private static String printBinaryShort(short value) {
-    String res = Integer.toBinaryString(value);
-    // java sign extends these, so negative numbers have extra 1s
-    if (res.length() > 16)
-      res = res.substring(res.length() - 16, res.length());
-    // pads with spaces, replace spaces with 0s
-    return String.format("%16s", res).replace(' ', '0');
-  }
-	
+{	
 	public static void main(String[] args) throws Exception {
 		String lex = "EZCode_lex.txt";
     String programName = "hello";
@@ -83,7 +71,7 @@ public class Tester
     
     // subroutines
     short subroutineAddress = (short) (0x3000 + instrs.size());
-    for (short instr : BuiltinUtils.routines) {
+    for (short instr : BuiltinUtils.code) {
       instrs.add(new Word(instr));
     }
     
@@ -124,14 +112,16 @@ public class Tester
               special.setAddress(stackAddress);
               break;
             case SpecialAddress.CallMult:
-              special.setAddress((short) (subroutineAddress + BuiltinUtils.mul_offset - i));
+              special.setAddress((short) (subroutineAddress + BuiltinUtils.mul_offset - i - 1));
               break;
             case SpecialAddress.CallDiv:
-              special.setAddress((short) (subroutineAddress + BuiltinUtils.div_offset - i));
+              special.setAddress((short) (subroutineAddress + BuiltinUtils.div_offset - i - 1));
               break;
-            case SpecialAddress.CallPrint:
-              // TODO: type checking and more print types
-              special.setAddress((short) (subroutineAddress + BuiltinUtils.iprint_offset - i));
+            case SpecialAddress.CallIPrint:
+              special.setAddress((short) (subroutineAddress + BuiltinUtils.iprint_offset - i - 1));
+              break;
+            case SpecialAddress.CallBPrint:
+              special.setAddress((short) (subroutineAddress + BuiltinUtils.bprint_offset - i - 1));
               break;
             default:
               break;
@@ -140,21 +130,8 @@ public class Tester
       }
     }
 
-    System.out.printf("Writing assembly bytecode to %s\n", binName);
-    BufferedWriter writer = new BufferedWriter(new FileWriter(binName));    
-
-    writer.write(printBinaryShort((short) 0x3000) + '\n');
-    for (Instruction i : instrs) {
-      System.out.println(i);
-      writer.write(printBinaryShort(i.emit()) + '\n');
-    }
-
-    writer.close();
-
-    System.out.printf("Converting bytecode %s to object file %s\n", binName, objName);
-    new ProcessBuilder("lc3tools/assembler", binName)
-      .inheritIO()
-      .start();
+    System.out.printf("Writing obj file to assembly bytecode to %s\n", objName);
+    ObjGen.writeObjFile(instrs,  objName);
 	}
 
 }

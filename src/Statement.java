@@ -60,16 +60,36 @@ class PrintStatement implements Statement {
   }
   
   @Override
-  public ArrayList<Instruction> emit(DataBlock datablock) {
+  public ArrayList<Instruction> emit(DataBlock datablock) {    
     ArrayList<Instruction> instrs = new ArrayList<Instruction>();
     byte r0 = 0;
     for (Expression expr : params) {
+      DataType type = expr.getType(datablock);
+        
       // result in r0
       instrs.addAll(expr.emit(r0, datablock));
-      // push to stack
-      instrs.addAll(StackUtils.push(r0));
-      instrs.add(Jsr.jsr((short) 0).special(SpecialAddress.CallPrint));
+      switch (type) {
+        case DataType.Int:
+          // push to stack
+          instrs.addAll(StackUtils.push(r0));
+          instrs.add(Jsr.jsr((short) 0).special(SpecialAddress.CallIPrint));
+          break;
+        case DataType.Char:
+          instrs.add(Trap.out());
+          break;
+        case DataType.String:
+          instrs.add(Trap.puts());
+          break;
+        case DataType.Bool:
+          // push to stack
+          instrs.addAll(StackUtils.push(r0));
+          instrs.add(Jsr.jsr((short) 0).special(SpecialAddress.CallBPrint));
+          break;
+        case DataType.Float:
+          break;
+      }
     }
+    // newline
     instrs.add(AddAnd.andWithLiteral(r0, r0, (byte) 0x00));
     instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) 0x0a));
     instrs.add(Trap.out());

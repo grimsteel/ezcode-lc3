@@ -30,6 +30,6 @@ This is a short reference of the `.obj` file format, based on [the converter sou
 2. A 2 byte version: `01 01`
 3. A sequence of instructions/memory values:
    1. The two-byte instruction, little endian
-   2. A one-byte boolean. `01` if this is the `.orig` header, `02` if this is an instr/mem value
+   2. A one-byte boolean. `01` if this is the `.orig` header, `00` if this is an instr/mem value
    3. A four-byte length, little endian, for the "comment"/text associated with this instruction
    4. The text associated with the instruction. `lc3tools` uses the assembly text here

@@ -126,7 +126,18 @@ div_err:
   puts
   halt
 
-;; PRINT_NUM: print signed base-10 number
+;; BPRINT: print boolean value
+bprint: add r6, r6, #-1             ; pop stack
+  lea r0, false
+	ldr r1, r6, #0
+	brz bprint_print
+	lea r0, true
+bprint_print:
+  puts
+  ret
+	
+
+;; IPRINT: print signed base-10 number
 ;; Algorithm:
 ;; Starting from the highest place value, subtracts
 ;; digits until the result is non negative.
@@ -205,6 +216,10 @@ div_buf_end:
 .fill #0
 div_err_msg:
 .stringz "Division by 0\n"
+true:
+.stringz "true"
+false:
+.stringz "false"
 digits:
 .fill x8AD0 ; -3 EE 4
 .fill xB1E0 ; -2 EE 4

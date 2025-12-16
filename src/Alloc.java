@@ -15,7 +15,8 @@ enum SpecialAddress {
   StackStart, // start of the stack
   CallMult,
   CallDiv,
-  CallPrint;
+  CallIPrint,
+  CallBPrint
 }
 
 enum DataType {
