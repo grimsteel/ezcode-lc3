@@ -45,7 +45,68 @@ class ConditionalBlock implements Statement {
   
   @Override
   public ArrayList<Instruction> emit(DataBlock datablock) {
-    throw new UnsupportedOperationException("emit not implemented for ConditionalBlock");
+    DataType dt = condition.getType(datablock);
+    if (dt != DataType.Bool) {
+      throw new IllegalStateException(String.format("Conditional expression must evaluate to a Bool, found %s", dt));
+    }
+    
+    ArrayList<Instruction> instrs = new ArrayList<Instruction>();
+    byte r0 = 0;
+    byte r1 = 1;
+    
+    // if the condition is a relational BinaryExpression, we can inline
+    if (condition instanceof BinaryExpression && ((BinaryExpression) condition).op.isRelational()) {
+      BinaryExpression exp = (BinaryExpression) condition;
+      // run sub expressions
+      instrs.addAll(exp.left.emit(r0, datablock)); // result in r0
+      instrs.addAll(exp.right.emit(r1, datablock)); // result in r1
+      // subtraction
+      instrs.add(new Not(r1, r1));
+      instrs.add(AddAnd.addWithLiteral(r1, r1, (byte) 1));
+      instrs.add(AddAnd.addWithRegister(r0, r0, r1));
+      // we jump over the true block if the condition is false
+      instrs.add(Branch.fromBinaryOperator(exp.op, (short) 0).invert());
+    } else {
+      // can't inline
+      instrs.addAll(condition.emit(r0, datablock));
+      // reset cc
+      instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) 0));
+      // jump if false
+      instrs.add(Branch.eq((short) 0));
+    }
+    
+    int branchIdx = instrs.size() - 1;
+    
+    ArrayList<Instruction> bodyInstrs = body.emit(datablock);
+    instrs.addAll(bodyInstrs);
+    
+    // normally we just have to jump over if block if condition false
+    int mainBranchLength = bodyInstrs.size();
+      
+    // jump over else and emit else
+    if (elseBody != null) {
+      ArrayList<Instruction> elseInstrs = elseBody.emit(datablock);
+      
+      // branch over else
+      instrs.add(Branch.any((short) elseInstrs.size()));
+      instrs.addAll(elseInstrs);
+      
+      // jump over jump at end of if block
+      mainBranchLength++;
+    }
+  
+    if (repeat) {
+      // jump over this jump too
+      mainBranchLength++;
+      
+      // jump back to beginning
+      instrs.add(Branch.any((short) -mainBranchLength));
+    }
+    
+    // update branch offset
+    ((Branch) instrs.get(branchIdx)).offset9 = (short) mainBranchLength;
+    
+    return instrs;
   }
 
   @Override

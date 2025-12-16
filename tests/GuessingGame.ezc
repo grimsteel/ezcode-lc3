@@ -1,6 +1,6 @@
 secret = 42;
 print("Guess a number between 1 and 100.");
-guess = input();
+guess = 3;
 n = 1;
 while (guess != secret) {
     if (guess < secret) {
@@ -9,7 +9,7 @@ while (guess != secret) {
     else {
         print("Too high.");
     }
-    guess = input();
+    guess = guess + 1;
     n = n + 1;
 }
 print("Correct! You got it in " + n + " guesses.");

@@ -64,7 +64,8 @@ class DataBlock {
       byte constantIdx = strings.get(str);
       // update the constant value to the new value
       constantValues.set(constantIdx, stringBlockStart);
-      stringBlockStart += (short) (((String) str).length());
+      // length + null term
+      stringBlockStart += (short) (((String) str).length() + 1);
     }
     
     return (short) (dataBlockStart + MAX_VARIABLES);
@@ -97,7 +98,8 @@ class DataBlock {
     // Calculate total length
     int totalLength = 0;
     for (String str : strings.keySet()) {
-      totalLength += str.length();
+      // length + null term
+      totalLength += str.length() + 1;
     }
     short[] stringBlock = new short[totalLength];
     int pos = 0;
@@ -105,6 +107,7 @@ class DataBlock {
       for (int i = 0; i < str.length(); i++) {
         stringBlock[pos++] = (short) str.charAt(i);
       }
+      stringBlock[pos++] = 0x0;
     }
     return stringBlock;
   }

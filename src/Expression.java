@@ -23,6 +23,20 @@ enum BinaryOperator {
   Div,
   Rem;
   
+  public boolean isRelational() {
+    switch (this) {
+      case Less:
+      case LessEqual:
+      case Greater:
+      case GreaterEqual:
+      case Equal:
+      case NotEqual:
+        return true;
+      default:
+        return false;
+    }
+  }
+  
   public static BinaryOperator fromString(String opStr) {
     if (opStr == null) return null;
     switch (opStr) {

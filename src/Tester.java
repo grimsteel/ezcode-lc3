@@ -4,7 +4,7 @@ public class Tester
 {	
 	public static void main(String[] args) throws Exception {
 		String lex = "EZCode_lex.txt";
-    String programName = "hello";
+    String programName = "GuessingGame";
     String objName = String.format("%s.obj", programName);
 		
 		Lexer lexer = new Lexer(lex, String.format("tests/%s.ezc", programName), false);
