@@ -22,8 +22,8 @@ public class Lexer {
 	 * @param lexFile	The name of the lexicon file
 	 * @param srcFile	The name of the source code file to be compiled
 	 */
-	public Lexer(String lexFile, String srcFile) {
-		this(lexFile, srcFile, null);
+	public Lexer(String lexFile, String srcFile, boolean printDebug) {
+		this(lexFile, srcFile, null, printDebug);
 	}
 	
 	
@@ -36,7 +36,7 @@ public class Lexer {
 	 * @param srcFile	The name of the source code file to be compiled
 	 * @param outFile	The name of the output file for the list of tokens
 	 */
-	public Lexer(String lex, String src, String out) {
+	public Lexer(String lex, String src, String out, boolean printDebug) {
 		
 		System.out.println("FILE: " + src);
 		
@@ -46,9 +46,10 @@ public class Lexer {
 			int i = src.lastIndexOf(".");
 			out = src.substring(0, i) + "_TOKENS" + src.substring(i);
 		}
-		//this.printFile(out);
 		
-		System.out.println(this);
+		if (printDebug) {
+		  System.out.println(this);
+		}
 	}
 	
 	
