@@ -28,6 +28,7 @@ enum DataType {
 
 class DataBlock {
   private HashMap<String, Byte> variableIndices = new HashMap<>();
+  private ArrayList<DataType> variableTypes = new ArrayList<>();
   public ArrayList<Short> constantValues = new ArrayList<>();
   // map of string to constant index
   private HashMap<String, Byte> strings = new HashMap<>();
@@ -42,6 +43,14 @@ class DataBlock {
   
   public byte getVariableOffset(String variableName) {
     return (byte) (-1 - variableIndices.get(variableName));
+  }
+  
+  public DataType getVariableType(String variableName) {
+    if (!variableIndices.containsKey(variableName)) {
+      throw new IllegalStateException(String.format("Variable %s has not been declared", variableName));
+    }
+    
+    return variableTypes.get(variableIndices.get(variableName));
   }
   
   /**
@@ -116,12 +125,21 @@ class DataBlock {
     }
   }
   
-  public void addVariable(String variable) {if (variableIndices.containsKey(variable)) return;
+  public void addVariable(String variable, DataType type) {
+    if (variableIndices.containsKey(variable)) {
+      // ensure type consistency
+      DataType existingType = variableTypes.get(variableIndices.get(variable));
+      if (type != existingType) {
+        throw new IllegalStateException(String.format("Cannot store value of type %s in variable %s of type %s.", type, variable, existingType));
+      }
+    }
+    
     if (variableIndices.size() >= MAX_VARIABLES) {
       throw new IllegalStateException("Exceeded maximum number of variables (" + MAX_VARIABLES + ")");
     } else {
       byte idx = (byte) (variableIndices.size());
       variableIndices.put(variable, idx);
+      variableTypes.add(type);
     }
   }
 }

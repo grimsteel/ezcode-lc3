@@ -92,6 +92,9 @@ public class Parser {
       
       Expression expr = parseExpression();
       if (expr != null && expect("SEMICOLON")) {
+        // register the variable
+        dataBlock.addVariable(ident, expr.getType(dataBlock));
+        
         return new Assignment(ident, expr);
       }
     }
@@ -317,10 +320,7 @@ public class Parser {
     switch (next.getTerminal()) {
       case "IDENTIFIER":
         pos++;
-        Ident i = new Ident((String) next.getValue());
-        // register variable
-        dataBlock.addVariable(i.ident);
-        return i;
+        return new Ident((String) next.getValue());
       case "BOOLEAN":
       case "FLOAT":
       case "INTEGER":

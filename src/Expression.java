@@ -4,6 +4,8 @@ interface Expression {
   /** Number of registers needed to evaluate this expression */
   int numRegisters();
   ArrayList<Instruction> emit(byte startRegister, DataBlock datablock);
+  
+  DataType getType(DataBlock datablock);
 }
 
 enum BinaryOperator {
@@ -40,6 +42,26 @@ enum BinaryOperator {
       default: return null;
     }
   }
+  
+  @Override
+  public String toString() {
+    switch (this) {
+      case BinaryOperator.And: return "&&";
+      case BinaryOperator.Add: return "+";
+      case BinaryOperator.Or: return "||";
+      case BinaryOperator.Sub: return "-";
+      case BinaryOperator.Less: return "<";
+      case BinaryOperator.LessEqual: return "<=";
+      case BinaryOperator.Greater: return ">";
+      case BinaryOperator.GreaterEqual: return ">=";
+      case BinaryOperator.Equal: return "==";
+      case BinaryOperator.NotEqual: return "!=";
+      case BinaryOperator.Mul: return "*";
+      case BinaryOperator.Div: return "/";
+      case BinaryOperator.Rem: return "%";
+      default: return "?";
+    }
+  }
 }
 class BinaryExpression implements Expression {
   public BinaryOperator op;
@@ -57,7 +79,47 @@ class BinaryExpression implements Expression {
     return String.format("BinaryExpression(%s, %s, %s)", left, op, right);
   }
 
+  @Override
+  public DataType getType(DataBlock datablock) {
+    DataType leftType = left.getType(datablock);
+    DataType rightType = right.getType(datablock);
 
+    boolean hasString = leftType == DataType.String || rightType == DataType.String;
+
+    switch (op) {
+      case BinaryOperator.And:
+      case BinaryOperator.Or:
+        if (hasString) break;
+        if (leftType == rightType && leftType == DataType.Bool) {
+          // both bools: assume logical
+          return DataType.Bool;
+        }
+        // assume bitwise. follow java behavior and coerce everything to int
+        return DataType.Int;
+      case BinaryOperator.Add:
+      case BinaryOperator.Sub:
+      case BinaryOperator.Mul:
+      case BinaryOperator.Div:
+      case BinaryOperator.Rem:
+        if (hasString) break;
+        // mul/div/rem don't make as much practical sense but allow it and coerce to int
+        return DataType.Int;
+      case BinaryOperator.Less:
+      case BinaryOperator.LessEqual:
+      case BinaryOperator.Greater:
+      case BinaryOperator.GreaterEqual:
+        // doesn't make sense for strings
+        if (hasString) break;
+        return DataType.Bool;
+      case BinaryOperator.Equal:
+      case BinaryOperator.NotEqual:
+        // This is always supported. Reference equality for strings.
+        return DataType.Bool;
+    }
+    
+    // if we haven't returned, it's not supported
+    throw new IllegalStateException(String.format("%s and %s are invalid operands for %s", leftType, rightType, op));
+  }
 
   @Override
   public int numRegisters() {
@@ -154,6 +216,15 @@ enum UnaryOperator {
       default: return null;
     }
   }
+  
+  @Override
+  public String toString() {
+    switch (this) {
+      case Negate: return "-";
+      case Not: return "!";
+      default: return "?";
+    }
+  }
 }
 class UnaryExpression implements Expression {
   public UnaryOperator op;
@@ -173,6 +244,29 @@ class UnaryExpression implements Expression {
   public int numRegisters() {
     // no additional registers needed for this - just operate on result
     return expr.numRegisters();
+  }
+  
+  @Override
+  public DataType getType(DataBlock datablock) {
+    DataType type = expr.getType(datablock);
+
+    if (type != DataType.String) {    
+      switch (op) {
+        case UnaryOperator.Not:
+          if (type == DataType.Bool) {
+            // logical
+            return DataType.Bool;
+          }
+          // bitwise: coerce to int
+          return DataType.Int;
+        case UnaryOperator.Negate:
+          // coerce to int
+          return DataType.Int;
+      }
+    }
+    
+    // if we haven't returned, it's not supported
+    throw new IllegalStateException(String.format("%s cannot be applied to %s", op, type));
   }
 
   @Override
@@ -208,6 +302,12 @@ class Ident implements Expression {
   public int numRegisters() {
     // load directly into register
     return 1;
+  }
+  
+  @Override
+  public DataType getType(DataBlock datablock) {
+    // get variable type from datablock. this also handles undefined variables
+    return datablock.getVariableType(ident);
   }
 
   @Override
@@ -295,6 +395,18 @@ class Literal implements Expression {
   }
 
   @Override
+  public DataType getType(DataBlock datablock) {
+    switch (type) {
+      case LiteralType.Bool: return DataType.Bool;
+      case LiteralType.Float: return DataType.Float;
+      case LiteralType.Int: return DataType.Int;
+      case LiteralType.Char: return DataType.Char;
+      case LiteralType.String: return DataType.String;
+      default: throw new IllegalStateException("Unknown literal type");
+    }
+  }
+
+  @Override
   public ArrayList<Instruction> emit(byte r0, DataBlock datablock) {
     ArrayList<Instruction> instrs = new ArrayList<>();
     
@@ -321,6 +433,11 @@ class InputExpression implements Expression {
   public int numRegisters() {
     // load result into register, input subroutine preserves registers
     return 1;
+  }
+
+  @Override
+  public DataType getType(DataBlock datablock) {
+    return DataType.String;
   }
 
   @Override
