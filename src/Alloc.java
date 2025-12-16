@@ -18,6 +18,14 @@ enum SpecialAddress {
   CallPrint;
 }
 
+enum DataType {
+  Int,
+  Float,
+  Bool,
+  String,
+  Char
+}
+
 class DataBlock {
   private HashMap<String, Byte> variableIndices = new HashMap<>();
   public ArrayList<Short> constantValues = new ArrayList<>();

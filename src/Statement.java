@@ -21,7 +21,7 @@ class Assignment implements Statement {
     // data block offset
     instrs.add(LoadStore.ld((byte) 1, (byte) 0).special(SpecialAddress.NearestDataBlock));
     // store at specific offset
-    instrs.add(LoadStoreRegOffset.str((byte) 1, (byte) 0, datablock.getVariableOffset(ident)));
+    instrs.add(LoadStoreRegOffset.str((byte) 0, (byte) 1, datablock.getVariableOffset(ident)));
     return instrs;
   }
 
@@ -69,11 +69,6 @@ class PrintStatement implements Statement {
       // push to stack
       instrs.addAll(StackUtils.push(r0));
       instrs.add(Jsr.jsr((short) 0).special(SpecialAddress.CallPrint));
-      
-      instrs.add(AddAnd.andWithLiteral(r0, r0, (byte) 0x00));
-      instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) 0x1f));
-      instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) 0x01));
-      instrs.add(Trap.out());
     }
     instrs.add(AddAnd.andWithLiteral(r0, r0, (byte) 0x00));
     instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) 0x0a));

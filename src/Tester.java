@@ -40,6 +40,7 @@ public class Tester
     for (Statement stmt : a) {
       programInstructions.addAll(stmt.emit(db));
     }
+    programInstructions.add(Trap.halt());
     
     // Pass 2: Insert data block addresses
     short coverageEnd = 0; // non inclusive
@@ -79,7 +80,6 @@ public class Tester
     }
     
     instrs.addAll(programInstructions);
-    instrs.add(Trap.halt());
     
     // subroutines
     short subroutineAddress = (short) (0x3000 + instrs.size());
@@ -111,9 +111,9 @@ public class Tester
     }
     
     // Pass 4: Update remaining specials
-    for (Instruction i : instrs) {
-      if (i instanceof UnresolvedSpecialInstruction) {
-        UnresolvedSpecialInstruction special = (UnresolvedSpecialInstruction) i;
+    for (int i = 0; i < instrs.size(); i++) {
+      if (instrs.get(i) instanceof UnresolvedSpecialInstruction) {
+        UnresolvedSpecialInstruction special = (UnresolvedSpecialInstruction) instrs.get(i);
         SpecialAddress type = special.getSpecialType();
         if (type != null) {
           switch (type) {
@@ -124,14 +124,14 @@ public class Tester
               special.setAddress(stackAddress);
               break;
             case SpecialAddress.CallMult:
-              special.setAddress((short) (subroutineAddress + BuiltinUtils.mul_offset));
+              special.setAddress((short) (subroutineAddress + BuiltinUtils.mul_offset - i));
               break;
             case SpecialAddress.CallDiv:
-              special.setAddress((short) (subroutineAddress + BuiltinUtils.div_offset));
+              special.setAddress((short) (subroutineAddress + BuiltinUtils.div_offset - i));
               break;
             case SpecialAddress.CallPrint:
               // TODO: type checking and more print types
-              special.setAddress((short) (subroutineAddress + BuiltinUtils.iprint_offset));
+              special.setAddress((short) (subroutineAddress + BuiltinUtils.iprint_offset - i));
               break;
             default:
               break;
