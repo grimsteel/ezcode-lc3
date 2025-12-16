@@ -137,6 +137,7 @@ class DataBlock {
       if (type != existingType) {
         throw new IllegalStateException(String.format("Cannot store value of type %s in variable %s of type %s.", type, variable, existingType));
       }
+      return;
     }
     
     if (variableIndices.size() >= MAX_VARIABLES) {

@@ -41,6 +41,6 @@ literal          BOOLEAN         ([tT][rR][uU][eE]|[fF][aA][lL][sS][eE])
 literal          FLOAT           [-+]?(((\d+(\.\d*)+)|(\.\d+))([eE][-+]?\d+)?|inf|nan)
 literal          INTEGER         [-+]?(\d+)
 literal          CHARACTER       '(.|\\.)'
-literal          STRING          "((:?.|\\.)*)"
+literal          STRING          "((:?.|\\.)*?)"
 
 identifier       IDENTIFIER      ([_a-zA-Z][_a-zA-Z0-9]*)

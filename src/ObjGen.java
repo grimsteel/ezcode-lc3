@@ -25,7 +25,7 @@ class ObjGen {
   private static ByteBuffer convertBin(short orig, List<Instruction> input) {
     int size = HEADER_SIZE + (input.size() + 1) * INSTRUCTION_SIZE;
     for (Instruction i : input) {
-      size += i.toString().length();
+      //size += i.toString().length();
     }
     ByteBuffer out = ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN);
     // write header
@@ -41,8 +41,8 @@ class ObjGen {
       String asm = instr.toString();
       // 0x01 = orig header
       out.put((byte) 0x00);
-      out.putInt(asm.length());
-      out.put(asm.getBytes());
+      out.putInt(0);
+      //out.put(asm.getBytes());
     }
 
     return out;

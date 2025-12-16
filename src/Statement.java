@@ -100,7 +100,7 @@ class ConditionalBlock implements Statement {
       mainBranchLength++;
       
       // jump back to beginning
-      instrs.add(Branch.any((short) -mainBranchLength));
+      instrs.add(Branch.any((short) -(instrs.size() +1)));
     }
     
     // update branch offset
