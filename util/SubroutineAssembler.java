@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class SubroutineAssembler {
+public class SubroutineAssembler {
   private static String ASM_FILE_NAME = "mul";
   public static void main(String[] args) throws IOException, InterruptedException {
     System.err.printf("Assembling %s.asm\n", ASM_FILE_NAME);

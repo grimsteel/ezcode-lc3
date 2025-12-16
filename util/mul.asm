@@ -1,4 +1,9 @@
 .ORIG	x3000
+lea r6, stack  
+jsr input
+jsr iprint
+halt
+
 ;; initialize stack
 ld r0, b
 ld r1, a
@@ -194,9 +199,78 @@ print_zero:
     ld r0, zero_ascii           ;   print  0
 	out
 	ret
+
+;; INPUT: Get a base-10 signed 16 bit number from standard input
+input: 
+  st r0, alu_tmp_0          ; restore registers
+  st r1, alu_tmp_1
+  st r2, alu_tmp_2
+  st r3, alu_tmp_3
+  st r4, alu_tmp_4
+  
+  lea r3, print_buf             ; r3 = print_buf
+  and r4, r4, #0
+input_loop:
+  getc
+  add r1, r0, #-10              ; if c == '\n' break
+  brz input_loop_end
+  add r1, r0, #-8
+  brnp input_loop_cont          ; if c == '\b'
+  add r4, r4, #0                ; check bounds
+  brz input_loop
+  out                           ; echo
+  add r4, r4, #-1               ; change ptrs
+  add r3, r3, #-1
+  br input_loop                 ; go back
+input_loop_cont:            
+  ld r1, zero_ascii_neg         ; check bounds
+  add r1, r1, r0
+  brn input_loop
+  add r2, r1, #-10
+  brzp input_loop
+  
+  out                           ; echo
+  str r1, r3, #0                ; store adjusted number
+  
+  add r3, r3, #1               ; change ptrs
+  add r4, r4, #1
+  add r2, r4, #-5
+  brn input_loop
+input_loop_end:
+  and r0, r0, #0                ; echo 
+  add r0, r0, #10
+  out
+  
+  and r0, r0, #0                ; build output
+  lea r3, print_buf
+input_build_num:
+  add r4, r4, #-1               ; decrement index
+  brn input_build_num_end
+  add r1, r0, r0                ; r1 = r0 << 3 = 8r0
+  add r1, r1, r1
+  add r1, r1, r1
+  add r0, r0, r0                ; r0 = r0 << 1 = 2r0
+  add r0, r1, r0                ; r0 = 8r0 + 2r0 = 10r0
+  ldr r1, r3, #0
+  add r0, r1, r0                ; add value in
+  add r3, r3, #1
+  br input_build_num
+input_build_num_end:
+  str r0, r6, #0            ; push stack
+  add r6, r6, #1
+  ld r0, alu_tmp_0          ; restore registers
+  ld r1, alu_tmp_1
+  ld r2, alu_tmp_2
+  ld r3, alu_tmp_3
+  ld r4, alu_tmp_4
+  ret
+
+
 ; char literals
 zero_ascii:
 .fill x30
+zero_ascii_neg:
+.fill #-48
 dash_ascii:
 .fill x2D
 ; alu storage
@@ -220,6 +294,8 @@ true:
 .stringz "true"
 false:
 .stringz "false"
+print_buf:
+.blkw #5
 digits:
 .fill x8AD0 ; -3 EE 4
 .fill xB1E0 ; -2 EE 4
