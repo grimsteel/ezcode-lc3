@@ -201,8 +201,7 @@ print_zero:
 	ret
 
 ;; INPUT: Get a base-10 signed 16 bit number from standard input
-input: 
-  st r0, alu_tmp_0          ; restore registers
+input: st r0, alu_tmp_0          ; restore registers
   st r1, alu_tmp_1
   st r2, alu_tmp_2
   st r3, alu_tmp_3

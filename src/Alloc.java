@@ -16,7 +16,8 @@ enum SpecialAddress {
   CallMult,
   CallDiv,
   CallIPrint,
-  CallBPrint
+  CallBPrint,
+  CallInput
 }
 
 enum DataType {

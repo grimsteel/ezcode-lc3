@@ -451,12 +451,14 @@ class InputExpression implements Expression {
 
   @Override
   public DataType getType(DataBlock datablock) {
-    return DataType.String;
+    return DataType.Int;
   }
 
   @Override
   public ArrayList<Instruction> emit(byte r0, DataBlock datablock) {
-    // TODO: support strings
-    throw new UnsupportedOperationException("Strings are not yet supported");
+    ArrayList<Instruction> instrs = new ArrayList<>();
+    instrs.add(Jsr.jsr((short) 0).special(SpecialAddress.CallInput));
+    instrs.addAll(StackUtils.pop((byte) r0));
+    return instrs;
   }
 }

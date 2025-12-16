@@ -144,6 +144,9 @@ public class Codegen {
             case SpecialAddress.CallBPrint:
               special.setAddress((short) (BuiltinUtils.bprint_offset + subroutinePCOffset));
               break;
+            case SpecialAddress.CallInput:
+              special.setAddress((short) (BuiltinUtils.input_offset + subroutinePCOffset));
+              break;
             default:
               break;
           }
