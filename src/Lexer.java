@@ -19,11 +19,10 @@ public class Lexer {
 	/** Lexically analyzes the specified source according to the specified 
 	 *  lexicon. The list of tokens is then printed to the console.
 	 * 
-	 * @param lexFile	The name of the lexicon file
 	 * @param srcFile	The name of the source code file to be compiled
 	 */
-	public Lexer(String lexFile, String srcFile, boolean printDebug) {
-		this(lexFile, srcFile, null, printDebug);
+	public Lexer(String srcFile, boolean printDebug) {
+		this(srcFile, null, printDebug);
 	}
 	
 	
@@ -36,11 +35,8 @@ public class Lexer {
 	 * @param srcFile	The name of the source code file to be compiled
 	 * @param outFile	The name of the output file for the list of tokens
 	 */
-	public Lexer(String lex, String src, String out, boolean printDebug) {
-		
-		System.out.println("FILE: " + src);
-		
-		this.parseSource(src, new Lexicon(lex));
+	public Lexer(String src, String out, boolean printDebug) {		
+		this.parseSource(src, new Lexicon());
 				
 		if (out == null) {
 			int i = src.lastIndexOf(".");
@@ -48,7 +44,7 @@ public class Lexer {
 		}
 		
 		if (printDebug) {
-		  System.out.println(this);
+		  System.out.print(this);
 		}
 	}
 	
@@ -163,12 +159,12 @@ public class Lexer {
 		String s = "";
 
 		Formatter f = new Formatter();
-		f.format("%5s  %5s  %-15s  %s\n", "Line", "Col", "Terminal", "Value");
-		f.format("%5s  %5s  %-15s  %s\n", "----", "---", "--------------", "-----");
+		f.format("|  %5s  %5s  %-15s  %s\n", "Line", "Col", "Terminal", "Value");
+		f.format("|  %5s  %5s  %-15s  %s\n", "----", "---", "--------------", "-----");
 		s += f.toString();
 		
 		for (Token token : myTokens) {
-			s += token + "\n";
+			s += "|  " + token + "\n";
 		}
 		return s;
 	}

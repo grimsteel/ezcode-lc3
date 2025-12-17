@@ -1,0 +1,14 @@
+a = 3 * 4 * 5 * 6;
+b = a * a * a * a;
+b = a * b * a * b;
+a = 3 * 4 * 5 * 6;
+b = a * a * a * a;
+b = a * b * a * b;
+a = 3 * 4 * 5 * 6;
+b = a * a * a * a;
+if (3 * 4 < 5 * 6) {
+print("greater");
+} else {
+print("less");
+}
+print(a, ' ', b);

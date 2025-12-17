@@ -66,9 +66,10 @@ public class Codegen {
     
     // Pass 3: Add correct data block address offsets
     for (int i = 0; i < programInstructions.size(); i++) {
-      if (programInstructions.get(i) instanceof UnresolvedSpecialInstruction) {
+      Instruction instr = programInstructions.get(i);
+      if (instr instanceof UnresolvedSpecialInstruction) {
         // cast
-        UnresolvedSpecialInstruction special = (UnresolvedSpecialInstruction) programInstructions.get(i);
+        UnresolvedSpecialInstruction special = (UnresolvedSpecialInstruction) instr;
         if (special.getSpecialType() == SpecialAddress.NearestDataBlock) {
           // set address to nearest multiple of 0x200 + 0x100
           int nearestDataBlockAddr = (i & ~0x1FF) | 0x100;
@@ -80,6 +81,24 @@ public class Codegen {
           int offset = nearestDataBlockAddr - (i + 1);
           special.setAddress((short) offset);
         }
+      } else if (instr instanceof Branch) {
+        Branch branch = (Branch) instr;
+        // correct offsets
+        int instrBlock = ((i+0x100) >> 9);
+        int target = (i + 1 + branch.offset9);
+        int targetBlock = ((target + 0x100) >> 9);
+        
+        int instrIndex = (i + 0x100) & 0x1ff, targetIndex = (target + 0x100) & 0x1ff;
+        // this _is_ one of the DataBlockAddresses - don't modify
+        if (instrIndex == 0x1ff || instrIndex == 0) continue;
+        
+        // if the target lands on the edge, adjust the block according to the direction
+        if (targetIndex == 0x1ff || targetIndex == 0) {
+          if (branch.offset9 > 0) targetBlock++;
+          else targetBlock--;
+        }
+        
+        branch.offset9 += 2 * (targetBlock - instrBlock);
       }
     }
     
