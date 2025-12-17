@@ -12,53 +12,53 @@ import java.io.FileNotFoundException;
 public class Lexicon
 {
   // harcoding the lexicon for portability
-  private static final String EZCODE_LEXICON = """
-  //CATEGORY      TERMINAL        REGEX
-  //----------------------------------------------------------------------------------------
-  hidden           WHITESPACE      \\s+
-  hidden           COMMENT         ((//.*$)|(/[*].*[*]/))
-  
-  operator         NOTEQUAL        !=
-  
-  operator         MULTIPLY        \\*
-  operator         DIVIDE          /
-  operator         REMAINDER       %
-  operator         PLUS            \\+
-  operator         MINUS           -
-  operator         NOT             !
-  
-  operator         LESSEQUAL       <=
-  operator         LESS            <
-  operator         GREATEQUAL      >=
-  operator         GREATER         >
-  operator         EQUAL           ==
-  
-  operator         ASSIGN          =
-  
-  operator         AND             &&
-  operator         OR              \\|\\|
-  
-  keyword          IF              [iI][fF]
-  keyword          ELSE            [eE][lL][sS][eE]
-  keyword          WHILE           [wW][hH][iI][lL][eE]
-  keyword          PRINT           [pP][rR][iI][nN][tT]
-  keyword          INPUT           [iI][nN][pP][uU][tT]
-  
-  delimeter        LPAREN          \\(
-  delimeter        RPAREN          \\)
-  delimeter        LCURLY          \\{
-  delimeter        RCURLY          \\}
-  
-  separator        SEMICOLON       ;
-  separator        COMMA           ,
-  
-  literal          BOOLEAN         ([tT][rR][uU][eE]|[fF][aA][lL][sS][eE])
-  literal          FLOAT           [-+]?(((\\d+(\\.\\d*)+)|(\\.\\d+))([eE][-+]?\\d+)?|inf|nan)
-  literal          INTEGER         [-+]?(\\d+)
-  literal          CHARACTER       '(.|\\\\.)'
-  literal          STRING          "((:?.|\\\\.)*?)"
-  
-  identifier       IDENTIFIER      ([_a-zA-Z][_a-zA-Z0-9]*)""";
+  private static final String EZCODE_LEXICON =
+  "//CATEGORY      TERMINAL        REGEX\n" +
+  "//----------------------------------------------------------------------------------------\n" +
+  "hidden           WHITESPACE      \\s+\n" +
+  "hidden           COMMENT         ((//.*$)|(/[*].*[*]/))\n" +
+  "\n" +
+  "operator         NOTEQUAL        !=\n" +
+  "\n" +
+  "operator         MULTIPLY        \\*\n" +
+  "operator         DIVIDE          /\n" +
+  "operator         REMAINDER       %\n" +
+  "operator         PLUS            \\+\n" +
+  "operator         MINUS           -\n" +
+  "operator         NOT             !\n" +
+  "\n" +
+  "operator         LESSEQUAL       <=\n" +
+  "operator         LESS            <\n" +
+  "operator         GREATEQUAL      >=\n" +
+  "operator         GREATER         >\n" +
+  "operator         EQUAL           ==\n" +
+  "\n" +
+  "operator         ASSIGN          =\n" +
+  "\n" +
+  "operator         AND             &&\n" +
+  "operator         OR              \\|\\|\n" +
+  "\n" +
+  "keyword          IF              [iI][fF]\n" +
+  "keyword          ELSE            [eE][lL][sS][eE]\n" +
+  "keyword          WHILE           [wW][hH][iI][lL][eE]\n" +
+  "keyword          PRINT           [pP][rR][iI][nN][tT]\n" +
+  "keyword          INPUT           [iI][nN][pP][uU][tT]\n" +
+  "\n" +
+  "delimeter        LPAREN          \\(\n" +
+  "delimeter        RPAREN          \\)\n" +
+  "delimeter        LCURLY          \\{\n" +
+  "delimeter        RCURLY          \\}\n" +
+  "\n" +
+  "separator        SEMICOLON       ;\n" +
+  "separator        COMMA           ,\n" +
+  "\n" +
+  "literal          BOOLEAN         ([tT][rR][uU][eE]|[fF][aA][lL][sS][eE])\n" +
+  "literal          FLOAT           [-+]?(((\\d+(\\.\\d*)+)|(\\.\\d+))([eE][-+]?\\d+)?|inf|nan)\n" +
+  "literal          INTEGER         [-+]?(\\d+)\n" +
+  "literal          CHARACTER       '(.|\\\\.)'\n" +
+  "literal          STRING          \"((:?.|\\\\.)*?)\"\n" +
+  "\n" +
+  "identifier       IDENTIFIER      ([_a-zA-Z][_a-zA-Z0-9]*)";
 	
 	/** The list of lexical rules for this lexicon.
 	 */

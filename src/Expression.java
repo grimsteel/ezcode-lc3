@@ -60,19 +60,19 @@ enum BinaryOperator {
   @Override
   public String toString() {
     switch (this) {
-      case BinaryOperator.And: return "&&";
-      case BinaryOperator.Add: return "+";
-      case BinaryOperator.Or: return "||";
-      case BinaryOperator.Sub: return "-";
-      case BinaryOperator.Less: return "<";
-      case BinaryOperator.LessEqual: return "<=";
-      case BinaryOperator.Greater: return ">";
-      case BinaryOperator.GreaterEqual: return ">=";
-      case BinaryOperator.Equal: return "==";
-      case BinaryOperator.NotEqual: return "!=";
-      case BinaryOperator.Mul: return "*";
-      case BinaryOperator.Div: return "/";
-      case BinaryOperator.Rem: return "%";
+      case And: return "&&";
+      case Add: return "+";
+      case Or: return "||";
+      case Sub: return "-";
+      case Less: return "<";
+      case LessEqual: return "<=";
+      case Greater: return ">";
+      case GreaterEqual: return ">=";
+      case Equal: return "==";
+      case NotEqual: return "!=";
+      case Mul: return "*";
+      case Div: return "/";
+      case Rem: return "%";
       default: return "?";
     }
   }
@@ -101,8 +101,8 @@ class BinaryExpression implements Expression {
     boolean hasString = leftType == DataType.String || rightType == DataType.String;
 
     switch (op) {
-      case BinaryOperator.And:
-      case BinaryOperator.Or:
+      case And:
+      case Or:
         if (hasString) break;
         if (leftType == rightType && leftType == DataType.Bool) {
           // both bools: assume logical
@@ -110,23 +110,23 @@ class BinaryExpression implements Expression {
         }
         // assume bitwise. follow java behavior and coerce everything to int
         return DataType.Int;
-      case BinaryOperator.Add:
-      case BinaryOperator.Sub:
-      case BinaryOperator.Mul:
-      case BinaryOperator.Div:
-      case BinaryOperator.Rem:
+      case Add:
+      case Sub:
+      case Mul:
+      case Div:
+      case Rem:
         if (hasString) break;
         // mul/div/rem don't make as much practical sense but allow it and coerce to int
         return DataType.Int;
-      case BinaryOperator.Less:
-      case BinaryOperator.LessEqual:
-      case BinaryOperator.Greater:
-      case BinaryOperator.GreaterEqual:
+      case Less:
+      case LessEqual:
+      case Greater:
+      case GreaterEqual:
         // doesn't make sense for strings
         if (hasString) break;
         return DataType.Bool;
-      case BinaryOperator.Equal:
-      case BinaryOperator.NotEqual:
+      case Equal:
+      case NotEqual:
         // This is always supported. Reference equality for strings.
         return DataType.Bool;
     }
@@ -154,32 +154,32 @@ class BinaryExpression implements Expression {
     instrs.addAll(right.emit(r1, datablock)); // result in r1
 
     switch (op) {
-      case BinaryOperator.And:
+      case And:
         instrs.add(AddAnd.andWithRegister(r0, r0, r1));
         break;
-      case BinaryOperator.Add:
+      case Add:
         instrs.add(AddAnd.addWithRegister(r0, r0, r1));
         break;
-      case BinaryOperator.Or:
+      case Or:
         // DeMorgan's
         instrs.add(new Not(r0, r0));
         instrs.add(new Not(r1, r1));
         instrs.add(AddAnd.andWithRegister(r0, r0, r1));
         instrs.add(new Not(r0, r0));
         break;
-      case BinaryOperator.Sub:
+      case Sub:
         // invert second
         instrs.add(new Not(r1, r1));
         instrs.add(AddAnd.addWithLiteral(r1, r1, (byte) 1));
         // add
         instrs.add(AddAnd.addWithRegister(r0, r0, r1));
         break;
-      case BinaryOperator.Less:
-      case BinaryOperator.LessEqual:
-      case BinaryOperator.Greater:
-      case BinaryOperator.GreaterEqual:
-      case BinaryOperator.Equal:
-      case BinaryOperator.NotEqual:
+      case Less:
+      case LessEqual:
+      case Greater:
+      case GreaterEqual:
+      case Equal:
+      case NotEqual:
         // note: when this is the condition in a conditional block, the break is inlined
         // this is only used when making a boolean variable
         // subtraction (2), set false, break, set true
@@ -197,9 +197,9 @@ class BinaryExpression implements Expression {
         // r0 = 1
         instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) 0x1));
         break;
-      case BinaryOperator.Mul:
-      case BinaryOperator.Div:
-      case BinaryOperator.Rem:
+      case Mul:
+      case Div:
+      case Rem:
         // push stack
         instrs.addAll(StackUtils.push(r0, r1));
         instrs.add(Jsr.jsr((short) 0).special(op == BinaryOperator.Mul ? SpecialAddress.CallMult : SpecialAddress.CallDiv));
@@ -266,14 +266,14 @@ class UnaryExpression implements Expression {
 
     if (type != DataType.String) {    
       switch (op) {
-        case UnaryOperator.Not:
+        case Not:
           if (type == DataType.Bool) {
             // logical
             return DataType.Bool;
           }
           // bitwise: coerce to int
           return DataType.Int;
-        case UnaryOperator.Negate:
+        case Negate:
           // coerce to int
           return DataType.Int;
       }
@@ -288,10 +288,10 @@ class UnaryExpression implements Expression {
     ArrayList<Instruction> instrs = new ArrayList<>();
     instrs.addAll(expr.emit(r0, datablock));
     switch (op) {
-      case UnaryOperator.Not:
+      case Not:
         instrs.add(new Not(r0, r0));
         break;
-      case UnaryOperator.Negate:
+      case Negate:
         instrs.add(new Not(r0, r0));
         instrs.add(AddAnd.addWithLiteral(r0, r0, (byte) 1));
         break;
@@ -379,19 +379,19 @@ class Literal implements Expression {
     short value = 0;
 
     switch (type) {
-      case LiteralType.String:
+      case String:
         // placeholder when we don't know address
         value = 0;
         break;
-      case LiteralType.Float:
+      case Float:
         throw new UnsupportedOperationException("Floats are not yet supported");
-      case LiteralType.Int:
+      case Int:
         value = ((Integer) this.value).shortValue();
         break;
-      case LiteralType.Char:
+      case Char:
         value = (short) ((Character) this.value).charValue();
         break;
-      case LiteralType.Bool:
+      case Bool:
         value = (short) (((Boolean) this.value).booleanValue() ? 1 : 0);
         break;
     }
@@ -411,11 +411,11 @@ class Literal implements Expression {
   @Override
   public DataType getType(DataBlock datablock) {
     switch (type) {
-      case LiteralType.Bool: return DataType.Bool;
-      case LiteralType.Float: return DataType.Float;
-      case LiteralType.Int: return DataType.Int;
-      case LiteralType.Char: return DataType.Char;
-      case LiteralType.String: return DataType.String;
+      case Bool: return DataType.Bool;
+      case Float: return DataType.Float;
+      case Int: return DataType.Int;
+      case Char: return DataType.Char;
+      case String: return DataType.String;
       default: throw new IllegalStateException("Unknown literal type");
     }
   }

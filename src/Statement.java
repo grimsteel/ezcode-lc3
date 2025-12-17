@@ -130,23 +130,23 @@ class PrintStatement implements Statement {
       // result in r0
       instrs.addAll(expr.emit(r0, datablock));
       switch (type) {
-        case DataType.Int:
+        case Int:
           // push to stack
           instrs.addAll(StackUtils.push(r0));
           instrs.add(Jsr.jsr((short) 0).special(SpecialAddress.CallIPrint));
           break;
-        case DataType.Char:
+        case Char:
           instrs.add(Trap.out());
           break;
-        case DataType.String:
+        case String:
           instrs.add(Trap.puts());
           break;
-        case DataType.Bool:
+        case Bool:
           // push to stack
           instrs.addAll(StackUtils.push(r0));
           instrs.add(Jsr.jsr((short) 0).special(SpecialAddress.CallBPrint));
           break;
-        case DataType.Float:
+        case Float:
           break;
       }
     }

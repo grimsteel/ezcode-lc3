@@ -93,10 +93,8 @@ public class Codegen {
         if (instrIndex == 0x1ff || instrIndex == 0) continue;
         
         // if the target lands on the edge, adjust the block according to the direction
-        if (targetIndex == 0x1ff || targetIndex == 0) {
-          if (branch.offset9 > 0) targetBlock++;
-          else targetBlock--;
-        }
+        if (targetIndex == 0x1ff && branch.offset9 > 0) targetBlock++;
+        else if (targetIndex == 0 && branch.offset9 < 0) targetBlock--;
         
         branch.offset9 += 2 * (targetBlock - instrBlock);
       }
@@ -145,25 +143,25 @@ public class Codegen {
         SpecialAddress type = special.getSpecialType();
         if (type != null) {
           switch (type) {
-            case SpecialAddress.DataBlock:
+            case DataBlock:
               special.setAddress(dbMidAddress);
               break;
-            case SpecialAddress.StackStart:
+            case StackStart:
               special.setAddress(stackAddress);
               break;
-            case SpecialAddress.CallMult:
+            case CallMult:
               special.setAddress((short) (BuiltinUtils.mul_offset + subroutinePCOffset));
               break;
-            case SpecialAddress.CallDiv:
+            case CallDiv:
               special.setAddress((short) (BuiltinUtils.div_offset + subroutinePCOffset));
               break;
-            case SpecialAddress.CallIPrint:
+            case CallIPrint:
               special.setAddress((short) (BuiltinUtils.iprint_offset + subroutinePCOffset));
               break;
-            case SpecialAddress.CallBPrint:
+            case CallBPrint:
               special.setAddress((short) (BuiltinUtils.bprint_offset + subroutinePCOffset));
               break;
-            case SpecialAddress.CallInput:
+            case CallInput:
               special.setAddress((short) (BuiltinUtils.input_offset + subroutinePCOffset));
               break;
             default:
