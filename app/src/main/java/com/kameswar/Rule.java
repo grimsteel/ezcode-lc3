@@ -1,6 +1,5 @@
 package com.kameswar;
 
-import java.util.InputMismatchException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,7 +54,7 @@ public class Rule {
         return Boolean.valueOf(matchedGroup);
       case "CHARACTER":
         if (matchedGroup.length() != 1) {
-          throw new InputMismatchException("Character literals must have a length of 1");
+          throw new IllegalStateException("Character literals must have a length of 1");
         }
         return matchedGroup.charAt(0);
       default:

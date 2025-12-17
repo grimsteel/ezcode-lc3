@@ -3,9 +3,6 @@ package com.kameswar;
 import java.util.List;
 import java.nio.*;
 import java.io.*;
-import java.nio.channels.FileChannel;
-import java.nio.file.StandardOpenOption;
-import java.nio.file.Paths;
 
 /**
 * Native Java generator for the lc3tools `.obj` file format 
@@ -16,13 +13,13 @@ class ObjGen {
   private static int HEADER_SIZE = 7;
   // 2 byte instruction + 1 byte type + 4 byte length 
   private static int INSTRUCTION_SIZE = 7;
-  public static void writeObjFile(List<Instruction> input, String filename) throws IOException {
-    FileChannel out = FileChannel.open(Paths.get(filename), StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+  public static ByteBuffer getObjFile(List<Instruction> input) throws IOException {
+    
     ByteBuffer buffer = convertBin((short) 0x3000, input);
     buffer.flip();
-    while (buffer.hasRemaining()) {
-      out.write(buffer);
-    }
+    
+    buffer.array();
+    return buffer;
   }
   private static ByteBuffer convertBin(short orig, List<Instruction> input) {
     int size = HEADER_SIZE + (input.size() + 1) * INSTRUCTION_SIZE;

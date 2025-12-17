@@ -7,7 +7,9 @@
 
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
-    application
+    java
+    war
+    id("org.teavm") version "0.13.0"
 }
 
 repositories {
@@ -22,7 +24,18 @@ java {
     }
 }
 
-application {
-    // Define the main class for the application.
-    mainClass = "com.kameswar.EZCodeWeb"
+dependencies {
+    teavm(teavm.libs.jsoApis)
+}
+
+teavm {
+    all {
+        mainClass = "com.kameswar.EZCodeWeb"
+    }
+    js {
+        addedToWebApp = true
+    }
+    wasmGC {
+        addedToWebApp = true
+    }
 }

@@ -3,8 +3,6 @@ package com.kameswar;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.io.File;
-import java.io.FileNotFoundException;
 
 /** Represents a lexicon as specified by a lexicon file. The file should 
  *  consist of 1 terminal symbol per row with each row being made up of 3 
@@ -67,21 +65,8 @@ public class Lexicon
 	private List<Rule> myRules;
 	
 	
-	/** Initializes a list of lexical rules for a specified lexicon.
-	 * 
-	 * @param lex		The relative filepath of the lexicon file.
-	 */
-	public Lexicon(String lex) {
-	  try {
-			myRules = readLexicon(new Scanner(new File(lex)));
-		} catch (FileNotFoundException e) {
-		  e.printStackTrace();
-			System.exit(1);
-		}
-	}
-	
 	public Lexicon() {
-	  myRules = readLexicon(new Scanner(EZCODE_LEXICON));
+	  myRules = readLexicon(EZCODE_LEXICON);
 	}
 	
 	
@@ -89,11 +74,14 @@ public class Lexicon
 	 *
 	 * @return		The list of the lexical rules in this lexicon
 	 */
-	private List<Rule> readLexicon(Scanner fin) {
+	private List<Rule> readLexicon(String in) {
 		List<Rule> rules = new ArrayList<>();
+    String[] lines  = in.split("\n");
 		
-		while (fin.hasNextLine()) {
-			String[] rule = fin.nextLine().split("[ \t]+");
+	  for (String line : lines) {
+      String trimmed = line.trim();
+      if (trimmed.length() == 0) continue;
+			String[] rule = trimmed.split("[ \t]+");
 			if (rule.length == 3 && !rule[0].startsWith("//")) {
 				rules.add(new Rule(rule));
 			}

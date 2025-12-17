@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>EZCode Compiler</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <script type="text/javascript" charset="utf-8" src="wasm-gc/app.wasm-runtime.js"></script>
+    <script>
+      async function main() {
+        let teavm = await TeaVM.wasmGC.load("wasm-gc/app.wasm");
+        teavm.exports.main([]);
+      }
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+    
+  </head>
+  <style>
+    html, body {
+      height: 100vh;
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      margin: 0 4rem;
+      max-width: unset;
+    }
+    #log-section, #main-section {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 0;
+    }
+    #main-section {
+      flex-shrink: 0;
+    }
+    #ezcode-form, #download-section, #log-section {
+      flex-grow: 1;
+    }
+
+    #log-section > div {
+      display: flex;
+      flex-direction : column;
+      flex: 1 1 0px;
+    }
+
+    pre {
+      min-height: 0;
+      overflow-wrap:break-word;
+      white-space: pre-wrap;
+      min-width: 0;
+      flex-grow: 1;
+      overflow: auto;
+    }
+  </style>
+  <body onload="main()">
+    <div id="main-section">
+      <form id="ezcode-form">
+        <h3>Enter source:</h3>
+        <textarea id="ezcode-source" rows="10" required></textarea>
+
+        <button type="submit">Compile</button>
+        <button type="button" id="file-upload-btn">Upload File</button>
+      </form>
+
+      <input type="file" id="file-upload" style="display: none" />
+
+      <div id="download-section">
+        <h3>Compiled <code>.obj</code>:</h3>
+        <button type="button" id="download-button">Download</button>
+      </div>
+    </div>
+
+    <div id="log-section">
+      <div>
+        <h3>Lexer</h3>
+        <pre id="lexer-log"></pre>
+      </div>
+      <div>
+        <h3>Parser</h3>
+        <pre id="parser-log"></pre>
+      </div>
+      <div>
+        <h3>Codegen</h3>
+        <pre id="codegen-log"></pre>
+      </div>
+    </div>
+    <script>
+      const fileUpload = document.getElementById("#file-upload");
+      document.getElementById("#file-upload-btn").addEventListener("click", () => {
+        fileUpload.click();
+      });
+      fileUpload.addEventListener("change", () => {
+        if (fileUpload.files.length > 0) {
+          const file = fileUpload.files[0];
+          const reader = new FileReader();
+          reader.readAsText(file);
+          reader.onload = () => {
+            document.getElementById("#ezcode-source").textContent = reader.result;
+          };
+        }
+      });
+
+      function downloadObj() {
+
+      }
+    </script>
+  </body>
+</html>

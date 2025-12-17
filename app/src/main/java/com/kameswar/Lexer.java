@@ -23,48 +23,9 @@ public class Lexer {
 	 * 
 	 * @param srcFile	The name of the source code file to be compiled
 	 */
-	public Lexer(String srcFile, boolean printDebug) {
-		this(srcFile, null, printDebug);
-	}
-	
-	
-	/** Lexically analyzes the specified source according to the specified 
-	 *  lexicon. The list of tokens is then written to the specified file, 
-	 *  (overwriting any previous contents should the file already exist) and
-	 *  printed to the console.
-	 * 
-	 * @param lexFile	The name of the lexicon file
-	 * @param srcFile	The name of the source code file to be compiled
-	 * @param outFile	The name of the output file for the list of tokens
-	 */
-	public Lexer(String src, String out, boolean printDebug) {		
-		this.parseSource(src, new Lexicon());
-				
-		if (out == null) {
-			int i = src.lastIndexOf(".");
-			out = src.substring(0, i) + "_TOKENS" + src.substring(i);
-		}
-		
-		if (printDebug) {
-		  System.out.print(this);
-		}
-	}
-	
-	
-	/** Reads the contents of the source code to be compiled.
-	 * 
-	 * @param srcFile		The name of the source code file.
-	 * @return				The entire source code as a single string.
-	 */
-	private static String readSrcFile(String srcFile) {
-		String srcText = "";
-		try {
-			Scanner fin = new Scanner(new File(srcFile));
-			while (fin.hasNextLine()) { srcText += fin.nextLine() + "\n"; }
-			fin.close();
-		} catch (Exception e) { e.printStackTrace(); }
-		return srcText;
-	}
+  public Lexer(String contents) {
+    this.parseSource(contents, new Lexicon());
+  }
 	
 	
 	/** Parses the source code into a list of Token objects, which are then 
@@ -73,8 +34,8 @@ public class Lexer {
 	 * @param srcFile	The name of the source code file to be compiled
 	 * @param lexicon	The set of production rules for this language
 	 */
-	private void parseSource(String srcFile, Lexicon lexicon) {
-		String[] text = Lexer.readSrcFile(srcFile).split("\n");
+	private void parseSource(String input, Lexicon lexicon) {
+		String[] text = input.split("\n");
 		List<Rule> rules = lexicon.getRules();
     
     for (int line = 0; line < text.length; line++) {
@@ -105,7 +66,7 @@ public class Lexer {
 
         // Print the error
         // col/line is 0-indexed
-        error(srcFile, line + 1, col + 1, "No matching token found", text[line]);
+        error("", line + 1, col + 1, "No matching token found", text[line]);
         break;
       }
     }
