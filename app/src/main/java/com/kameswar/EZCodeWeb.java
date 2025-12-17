@@ -1,6 +1,8 @@
+package com.kameswar;
+
 import java.util.*;
 
-public class Tester
+public class EZCodeWeb
 {	
   private static String getOutputFile(String input, String output) {
     // they provided output filename
