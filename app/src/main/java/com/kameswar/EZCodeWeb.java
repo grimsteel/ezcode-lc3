@@ -35,7 +35,13 @@ public class EZCodeWeb
 		clear();
 		
     println(lexerLog, "Lexing source...");
-		Lexer lexer = new Lexer(input.getValue());
+    Lexer lexer;
+    try {
+      lexer = new Lexer(input.getValue());
+    } catch (Exception e) {
+      println(lexerLog, String.format("|  Lexer error: %s", e));
+      return;
+    }
     println(lexerLog, String.format("|  %5s  %5s  %-15s  %s", "Line", "Col", "Terminal", "Value"));
 		println(lexerLog, String.format("|  %5s  %5s  %-15s  %s", "----", "---", "--------------", "-----"));
     for (Token t : lexer.getTokens()) {
@@ -46,8 +52,14 @@ public class EZCodeWeb
 		DataBlock db = new DataBlock();
 		
 		println(parserLog, "Parsing tokens...");
-    Parser p = new Parser(lexer.getTokens(), db);
-    ArrayList<Statement> statements = p.parseSequence(/* root */ true);
+		ArrayList<Statement> statements;
+		try {
+      Parser p = new Parser(lexer.getTokens(), db);
+      statements = p.parseSequence(/* root */ true);
+		} catch (Exception e) {
+      println(parserLog, String.format("|  Parser error: %s", e));
+      return;
+    }
     for (Statement t : statements) {
       println(parserLog, String.format("|  %s", t));
     }
@@ -55,15 +67,21 @@ public class EZCodeWeb
     println(parserLog, String.format("|- Successfully parsed %d statements.\n\n", statements.size()));
     
     println(codegenLog, "Generating code...");
-    Codegen cg = new Codegen(statements, (short) 0x3000, db);
-    ArrayList<Instruction> instrs = cg.generate();
+    ArrayList<Instruction> instrs;
+    try {
+      Codegen cg = new Codegen(statements, (short) 0x3000, db);
+      instrs = cg.generate();
+    } catch (Exception e) {
+      println(codegenLog, String.format("|  Codegen error: %s", e));
+      return;
+    }
     println(codegenLog, String.format("|- Successfully generated %d instructions (including builtins).\n", instrs.size()));
     
     //System.out.printf("Writing assembly bytecode to %s\n", outputFile);
     try{
       downloadObj(ObjGen.getObjFile(instrs).array());
     } catch (Exception e) {
-      println(codegenLog, String.format("Error: %s", e));
+      println(codegenLog, String.format("|  Download error: %s", e));
     }
   }
   
