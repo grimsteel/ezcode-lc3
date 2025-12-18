@@ -57,7 +57,17 @@
     <div id="main-section">
       <form id="ezcode-form">
         <h3>Enter source:</h3>
-        <textarea id="ezcode-source" rows="10" required></textarea>
+        <textarea id="ezcode-source" rows="10" required>
+print("Factorial calculator. Enter a number:");
+n = input();
+result = 1;
+i = 1;
+while (i <= n) {
+    result = result * i;
+    i = i + 1;
+}
+print(n, " factorial is ", result);
+        </textarea>
 
         <button type="submit">Compile</button>
         <button type="button" id="file-upload-btn">Upload File</button>
@@ -67,6 +77,9 @@
 
       <div id="download-section">
         <h3>Compiled <code>.obj</code>:</h3>
+        <p>Compiled file size: <span id="filesize">N/A</span> kb</p>
+        <input type="text" id="out-filename" placeholder="Output filename" />
+        <p>Compiled <code>.obj</code> files can be loaded into LC3Tools from the simulator tab.</p>
         <button type="button" id="download-button">Download</button>
       </div>
     </div>
@@ -85,25 +98,54 @@
         <pre id="codegen-log"></pre>
       </div>
     </div>
+    <a style="visibility: hidden" id="download-link"></a>
     <script>
-      const fileUpload = document.getElementById("#file-upload");
-      document.getElementById("#file-upload-btn").addEventListener("click", () => {
+      const ezcodeSource = document.getElementById("ezcode-source");
+      const fileUploadBtn = document.getElementById("file-upload-btn");
+      const fileUpload = document.getElementById("file-upload");
+      const downloadSection = document.getElementById("download-section");
+      const filesizeSpan = document.getElementById("filesize");
+      const outFilename = document.getElementById("out-filename");
+      const downloadButton = document.getElementById("download-button");
+      const downloadLink = document.getElementById("download-link");
+
+      let compiled = null;
+
+      fileUploadBtn.addEventListener("click", () => {
         fileUpload.click();
       });
       fileUpload.addEventListener("change", () => {
         if (fileUpload.files.length > 0) {
           const file = fileUpload.files[0];
+          // insert contents
           const reader = new FileReader();
-          reader.readAsText(file);
           reader.onload = () => {
-            document.getElementById("#ezcode-source").textContent = reader.result;
+            ezcodeSource.value = reader.result;
           };
+          reader.readAsText(file);
+          // update output name
+          outFilename.value = file.name.replace(/\.[^/.]+$/, "") + ".obj";
         }
       });
-
-      function downloadObj(test) {
-        alert(test);
+      
+      /**
+      * @param {Int8Array} bytes
+      */
+      function downloadObj(bytes) {
+        compiled = new Uint8Array(bytes);
+        filesizeSpan.innerText = Math.round(compiled.length / 1000);
       }
+
+      downloadButton.addEventListener("click", () => {
+        if (!compiled) return alert("Compile a file first!");
+        const name = outFilename.value || "program.obj";
+        const fileBlob = new File([compiled], name, { type: "application/octet-stream" });
+        const url = URL.createObjectURL(fileBlob);
+        // download
+        downloadLink.href = url;
+        downloadLink.click();
+        URL.revokeObjectURL(url);
+      });
     </script>
   </body>
 </html>
