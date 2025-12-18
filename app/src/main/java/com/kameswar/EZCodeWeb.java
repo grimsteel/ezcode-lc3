@@ -1,7 +1,9 @@
 package com.kameswar;
 
 import org.teavm.jso.dom.html.*;
+import org.teavm.jso.JSBody;
 
+import java.io.IOException;
 import java.util.*;
 
 public class EZCodeWeb
@@ -12,6 +14,9 @@ public class EZCodeWeb
   private static HTMLElement lexerLog = document.getElementById("lexer-log");
   private static HTMLElement parserLog = document.getElementById("parser-log");
   private static HTMLElement codegenLog = document.getElementById("codegen-log");
+
+  @JSBody(params = { "bytes" }, script = "window.downloadObj(bytes)")
+  public static native void downloadObj(byte[] bytes);
 
   private static void println(HTMLElement log, String s) {
     log.setTextContent(log.getTextContent() + s + '\n');
@@ -53,9 +58,13 @@ public class EZCodeWeb
     Codegen cg = new Codegen(statements, (short) 0x3000, db);
     ArrayList<Instruction> instrs = cg.generate();
     println(codegenLog, String.format("|- Successfully generated %d instructions (including builtins).\n", instrs.size()));
-    URL
+    
     //System.out.printf("Writing assembly bytecode to %s\n", outputFile);
-    try{ObjGen.getObjFile(instrs);} catch (Exception e) {}
+    try{
+      downloadObj(ObjGen.getObjFile(instrs).array());
+    } catch (Exception e) {
+      println(codegenLog, String.format("Error: %s", e));
+    }
   }
   
 	public static void main(String[] args) throws Exception {

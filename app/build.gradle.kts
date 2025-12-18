@@ -25,6 +25,7 @@ java {
 }
 
 dependencies {
+    teavm(teavm.libs.jso)
     teavm(teavm.libs.jsoApis)
 }
 
