@@ -76,11 +76,12 @@ print(n, " factorial is ", result);
       <input type="file" id="file-upload" style="display: none" />
 
       <div id="download-section">
-        <h3>Compiled <code>.obj</code>:</h3>
+        <h3>Compiled <code>.obj</code> and <code>.asm</code>:</h3>
         <p>Compiled file size: <span id="filesize">N/A</span> kb</p>
         <input type="text" id="out-filename" placeholder="Output filename" />
         <p>Compiled <code>.obj</code> files can be loaded into LC3Tools from the simulator tab.</p>
         <button type="button" id="download-button">Download</button>
+        <button type="button" id="download-asm-button">Download ASM</button>
       </div>
     </div>
 
@@ -107,9 +108,11 @@ print(n, " factorial is ", result);
       const filesizeSpan = document.getElementById("filesize");
       const outFilename = document.getElementById("out-filename");
       const downloadButton = document.getElementById("download-button");
+      const downloadAsmButton = document.getElementById("download-asm-button");
       const downloadLink = document.getElementById("download-link");
 
       let compiled = null;
+      let asm = null;
 
       fileUploadBtn.addEventListener("click", () => {
         fileUpload.click();
@@ -131,11 +134,21 @@ print(n, " factorial is ", result);
       /**
       * @param {Int8Array} bytes
       */
-      function downloadObj(bytes) {
+      function downloadObj(bytes, asm1) {
         compiled = new Uint8Array(bytes);
         filesizeSpan.innerText = Math.round(compiled.length / 1000);
+        asm = asm1;
       }
-
+      downloadAsmButton.addEventListener("click", () => {
+        if (!asm) return alert("Compile a file first!");
+        const name = outFilename.value || "program.asm";
+        const fileBlob = new File([asm], name, { type: "txt/plain" });
+        const url = URL.createObjectURL(fileBlob);
+        // download
+        downloadLink.href = url;
+        downloadLink.click();
+        URL.revokeObjectURL(url);
+      });
       downloadButton.addEventListener("click", () => {
         if (!compiled) return alert("Compile a file first!");
         const name = outFilename.value || "program.obj";

@@ -1,6 +1,7 @@
 package com.kameswar;
 
-import java.util.ArrayList;
+import java.util.Base64;
+import java.util.*;
 
 enum Opcode {
   NotAnInstruction(-1),
@@ -30,6 +31,7 @@ enum Opcode {
 interface Instruction {
   public Opcode getOpcode();
   public short emit();
+  public String toString(short address);
 }
 
 // An instruction that may have an unresolved special address
@@ -42,6 +44,8 @@ interface UnresolvedSpecialInstruction {
 
 // small helper utilities for formatting and sign-extension
 class AsmUtils {
+  static HashSet<Short> allTargets = new HashSet<>();
+
   static int signExtend(int value, int bits) {
     int mask = (1 << bits) - 1;
     int raw = value & mask;
@@ -50,6 +54,12 @@ class AsmUtils {
       raw |= ~mask;
     }
     return raw;
+  }
+  static String makeLabel(short address, int value, int bits) {
+    int offset = signExtend(value, bits);
+    short target = (short) (address + offset + 1);
+    allTargets.add(target);
+    return Base64.getEncoder().encodeToString(new byte[] {(byte) (target & 0xff), (byte) (target >> 8)}).replace("=", "");
   }
   static String reg(byte r) { return "r" + (r & 0x7); }
   static String hex8(int v) { return String.format("x%02X", v & 0xFF); }
@@ -136,15 +146,13 @@ class Branch implements Instruction {
     return (short) result;
   }
 
-  @Override
-  public String toString() {
+  public String toString(short address) {
     String flags = "";
     if (n) flags += "n";
     if (z) flags += "z";
     if (p) flags += "p";
     String mnemonic = "br" + (flags.isEmpty() ? "" : flags);
-    int off = AsmUtils.signExtend(offset9, 9);
-    return String.format("%s #%d", mnemonic, off);
+    return String.format("%s %s", mnemonic, AsmUtils.makeLabel(address, offset9, 9));
   }
 }
 
@@ -209,7 +217,7 @@ class AddAnd implements Instruction {
   }
 
   @Override
-  public String toString() {
+  public String toString(short address) {
     String op = (opcode == Opcode.Add) ? "add" : "and";
     if (!isLiteral) {
       // per emit(): isLiteral -> register mode
@@ -296,7 +304,7 @@ class LoadStore implements Instruction, UnresolvedSpecialInstruction {
   }
 
   @Override
-  public String toString() {
+  public String toString(short address) {
     String m;
     switch (opcode) {
       case LoadDirect: m = "ld"; break;
@@ -306,9 +314,8 @@ class LoadStore implements Instruction, UnresolvedSpecialInstruction {
       case StoreIndirect: m = "sti"; break;
       default: m = opcode.name(); break;
     }
-    int off = AsmUtils.signExtend(offset9, 9);
     // register position differs: for loads dest, for stores src
-    return String.format("%s %s, #%d", m, AsmUtils.reg(reg), off);
+    return String.format("%s %s, %s", m, AsmUtils.reg(reg), AsmUtils.makeLabel(address, offset9, 9));
   }
 }
 
@@ -377,7 +384,7 @@ class LoadStoreRegOffset implements Instruction, UnresolvedSpecialInstruction {
   }
 
   @Override
-  public String toString() {
+  public String toString(short address) {
     String m = (opcode == Opcode.Load) ? "ldr" : "str";
     int off6 = AsmUtils.signExtend(offset6 & 0x3F, 6);
     // reg1 = dest for LDR, src for STR; reg2 = base
@@ -425,7 +432,7 @@ class Trap implements Instruction {
   }
 
   @Override
-  public String toString() {
+  public String toString(short address) {
     return String.format("trap %s", AsmUtils.hex8(intCode));
   }
 }
@@ -459,7 +466,7 @@ class Not implements Instruction {
   }
 
   @Override
-  public String toString() {
+  public String toString(short address) {
     return String.format("not %s, %s", AsmUtils.reg(dest), AsmUtils.reg(src));
   }
 }
@@ -494,7 +501,7 @@ class Jmp implements Instruction {
   }
 
   @Override
-  public String toString() {
+  public String toString(short address) {
     if ((baseReg & 0x7) == 7) return "ret";
     return String.format("jmp %s", AsmUtils.reg(baseReg));
   }
@@ -566,12 +573,11 @@ class Jsr implements Instruction, UnresolvedSpecialInstruction {
     return new Jsr(true, baseReg, (short)0);
   }
   @Override
-  public String toString() {
+  public String toString(short address) {
     if (isRegisterMode) {
       return String.format("jsrr %s", AsmUtils.reg(baseReg));
     } else {
-      int off11 = AsmUtils.signExtend(offset11 & 0x7FF, 11);
-      return String.format("jsr #%d", off11);
+      return String.format("jsr %s", AsmUtils.makeLabel(address, offset11 & 0x7FF, 11));
     }
   }
 }
@@ -611,7 +617,7 @@ class Word implements Instruction, UnresolvedSpecialInstruction {
   }
 
   @Override
-  public String toString() {
+  public String toString(short address) {
     return String.format(".fill %s", AsmUtils.hex16(word));
   }
 }

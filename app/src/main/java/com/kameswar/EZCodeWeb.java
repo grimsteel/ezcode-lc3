@@ -15,8 +15,8 @@ public class EZCodeWeb
   private static HTMLElement parserLog = document.getElementById("parser-log");
   private static HTMLElement codegenLog = document.getElementById("codegen-log");
 
-  @JSBody(params = { "bytes" }, script = "window.downloadObj(bytes)")
-  public static native void downloadObj(byte[] bytes);
+  @JSBody(params = { "bytes", "asm" }, script = "window.downloadObj(bytes, asm)")
+  public static native void downloadObj(byte[] bytes, String asm);
 
   private static void println(HTMLElement log, String s) {
     log.setTextContent(log.getTextContent() + s + '\n');
@@ -77,9 +77,25 @@ public class EZCodeWeb
     }
     println(codegenLog, String.format("|- Successfully generated %d instructions (including builtins).\n", instrs.size()));
     
+    String asm = ".orig x3000\n";
+    String[] instrStrings = new String[instrs.size()];
+    for (int i = 0; i < instrs.size(); i++) {
+      instrStrings[i] = instrs.get(i).toString((short) i);
+    }
+
+    for (Short address : AsmUtils.allTargets) {
+      String label = Base64.getEncoder().encodeToString(new byte[] {(byte) (address & 0xff), (byte) (address >> 8)}).replace("=", "");
+      instrStrings[address] = label + ": " + instrStrings[address];
+    }
+
+    for (String item : instrStrings) {
+      asm += item + '\n';
+    }
+
+
     //System.out.printf("Writing assembly bytecode to %s\n", outputFile);
     try{
-      downloadObj(ObjGen.getObjFile(instrs).array());
+      downloadObj(ObjGen.getObjFile(instrs).array(), asm);
     } catch (Exception e) {
       println(codegenLog, String.format("|  Download error: %s", e));
     }
